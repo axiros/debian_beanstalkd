@@ -27,3 +27,11 @@
 *.i*86
 *.x86_64
 *.hex
+
+# beanstalld specific files
+beanstalkd/Makefile
+beanstalkd/beanstalkd
+beanstalkd/config.h
+beanstalkd/config.log
+beanstalkd/config.status
+beanstalkd/stamp-h1
