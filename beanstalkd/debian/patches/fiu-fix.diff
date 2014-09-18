@@ -1,0 +1,60 @@
+# Description: correct fiu-ctrl arguments for 0.90
+# Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=687402
+# Author: Keith Rarick <kr@xph.us>
+# Last-Update: 2012-10-08
+--- a/sh-tests/binlog-diskfull-delete.sh
++++ b/sh-tests/binlog-diskfull-delete.sh
+@@ -2,7 +2,6 @@
+ 
+ . "$SRCDIR/sh-tests/common.functions"
+ 
+-ENOSPC=28
+ server=localhost
+ tmpdir="$TMPDIR"
+ size=1000
+@@ -81,7 +80,7 @@
+ }
+ 
+ # Make beanstalkd think the disk is full now.
+-fiu-ctrl -e posix/io/oc/open -i $ENOSPC $bpid
++fiu-ctrl -c 'enable name=posix/io/oc/open' $bpid
+ 
+ # Insert enough jobs to create another binlog file
+ $nc $server $port <<EOF > "$out1"
+@@ -138,7 +137,7 @@
+ test ! -e "$logdir"/binlog.1 || fail First binlog file is still there
+ 
+ # Now make beanstalkd think the disk once again has space.
+-fiu-ctrl -d posix/io/oc/open $bpid
++fiu-ctrl -c 'disable name=posix/io/oc/open' $bpid
+ 
+ # Insert enough jobs to create another binlog file
+ $nc $server $port <<EOF > "$out1"
+--- a/sh-tests/binlog-diskfull.sh
++++ b/sh-tests/binlog-diskfull.sh
+@@ -2,7 +2,6 @@
+ 
+ . "$SRCDIR/sh-tests/common.functions"
+ 
+-ENOSPC=28
+ server=localhost
+ tmpdir="$TMPDIR"
+ size=1000
+@@ -39,7 +38,7 @@
+ start_beanstalkd $logdir "-s $size" "fiu-run -x"
+ 
+ # Make beanstalkd think the disk is full now.
+-fiu-ctrl -e posix/io/oc/open -i $ENOSPC $bpid
++fiu-ctrl -c 'enable name=posix/io/oc/open' $bpid
+ 
+ # Insert enough jobs to create another binlog file
+ $nc $server $port <<EOF > "$out1"
+@@ -70,7 +69,7 @@
+ test "$res" -eq 0 || exit $res
+ 
+ # Now make beanstalkd think the disk once again has space.
+-fiu-ctrl -d posix/io/oc/open $bpid
++fiu-ctrl -c 'disable name=posix/io/oc/open' $bpid
+ 
+ # Insert enough jobs to create another binlog file
+ $nc $server $port <<EOF > "$out1"

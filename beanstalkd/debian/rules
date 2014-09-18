@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# don't unnecessarily link against libnsl
+export ac_cv_lib_nsl_inet_aton=thanks_but_no
+# for beanstalkd test scripts
+export VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --disable-rpath
+	sed -i 's?sh-tests/\*\.{commands,sh}?sh-tests/*.commands sh-tests/*.sh?' \
+		Makefile
+
+override_dh_prep:
+	dh_prep -X beanstalkd.spec
+
+# silly acrobatics to preserve an upstream file
+override_dh_auto_clean:
+	dh_testdir
+	mv beanstalkd.spec beanstalkd.spec_
+	dh_auto_clean
+	mv beanstalkd.spec_ beanstalkd.spec

@@ -1,0 +1,16 @@
+# Description: eliminate OOM error after server crash
+# Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=698140
+# Origin: https://github.com/kr/beanstalkd/commit/70b63d5f52010d5b286f146058573849d8b95a81
+--- a/binlog.c
++++ b/binlog.c
+@@ -111,6 +111,10 @@
+ 
+     oldest_binlog = b->next;
+ 
++    if (newest_binlog == b) {
++        newest_binlog = b->next; /* == 0 */
++    }
++
+     unlink(b->path);
+     free(b);
+ }

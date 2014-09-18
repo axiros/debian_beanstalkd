@@ -1,0 +1,86 @@
+beanstalkd (1.4.6-5) testing-proposed-updates; urgency=low
+
+  * Add fix-empty-binlog-oom.diff (from upstream commit 70b63d5) to fix
+    OUT_OF_MEMORY error after crash (Closes: #698140, aka upstream issue 44)
+
+ -- Serafeim Zanikolas <sez@debian.org>  Mon, 14 Jan 2013 17:17:27 +0100
+
+beanstalkd (1.4.6-4) testing-proposed-updates; urgency=low
+
+  * Add fiu-fix.diff (upstream commit 3176e28) to fix FTBFS due to
+    fiu-ctrl silently ignoring obsolete command line arguments
+    (Closes: #687402)
+  * Add Vcs-* headers in debian/control
+  * Bump up Standards-Version to 3.9.3 (no changes)
+
+ -- Serafeim Zanikolas <sez@debian.org>  Mon, 08 Oct 2012 18:57:43 +0200
+
+beanstalkd (1.4.6-3) unstable; urgency=high
+
+  * Patch sh-tests/common.functions to randomise the listener port during
+    build tests (Closes: #636964); high urgency due to RC bug
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 14 Aug 2011 15:46:45 +0200
+
+beanstalkd (1.4.6-2) unstable; urgency=low
+
+  * Apply upstream patch, rename-dprintf.diff, to fix FTBFS (Closes: #632762)
+  * Bump up Standards-Version to 3.9.2 (no changes)
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 10 Jul 2011 20:51:11 +0200
+
+beanstalkd (1.4.6-1) unstable; urgency=medium
+
+  * New upstream release
+  * Fix bashism in the upstream, dynamically generated Makefile
+  * Urgency set to medium because the new upstream release fixes a potential
+    security issue (see upstream NEWS file)
+  * debian/control:Maintainer: set to my debian email address
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 30 May 2010 01:00:51 +0200
+
+beanstalkd (1.4.4-2) unstable; urgency=low
+
+  * debian/control:Build-Depends: require fiu-utils >=0.13-3, to test
+    successfully on certain arches (see #574405 and #574752)
+  * debian/postrm: fix test of whether /var/lib/beanstalkd is empty (would
+    fail with subdirectories, which normally are not created there), and
+    revise diagnostic messages
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Thu, 25 Mar 2010 21:58:07 +0100
+
+beanstalkd (1.4.4-1) unstable; urgency=low
+
+  * New Upstream Release
+    - drop make-tests-more-robust-and-tidy.diff (adopted upstream)
+    - fixes failing build tests (Closes: #571357)
+  * Modify /etc/default/beanstalkd for easier source'ing
+  * debian/control:Build-Depends: replace netcat with python-minimal
+  * debian/rules: run all build tests, and do so with verbosity
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Mon, 15 Mar 2010 09:31:44 +0100
+
+beanstalkd (1.4.3-2) unstable; urgency=low
+
+  * Bump up Standards-Version to 3.8.4 (no changes)
+  * Enable build-time tests
+    - add make-tests-more-robust-and-tidy.diff
+        - do not run tests unless loopback interface is configured
+        - listen only on localhost, for security reasons
+        - try listening on another port when the default is not available
+        - cleanup named pipes that are left behind by fiu
+    - debian/control: add Build-Depends: netcat, fiu-utils, procps, net-tools
+    - debian/rules: ignore sh-tests/pause-tube.* (false negative)
+  * debian/init: add Required-{Start,Stop}: $remote_fs for dep-based booting
+  * debian/control
+    - add Suggests: doc-base
+    - revise package description to clarify that beanstalkd is a workqueue
+      service, which is a specific case of messaging
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Sun, 21 Feb 2010 16:34:00 +0100
+
+beanstalkd (1.4.3-1) unstable; urgency=low
+
+  * Initial release (Closes: #557128)
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Wed, 18 Nov 2009 23:32:00 +0100

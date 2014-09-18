@@ -1,0 +1,29 @@
+Source: beanstalkd
+Section: net
+Priority: extra
+Maintainer: Serafeim Zanikolas <sez@debian.org>
+Build-Depends: debhelper (>= 7.0.50~), autotools-dev, libtool,
+               libevent-dev (>= 1.4.1), fiu-utils (>=0.13-3), procps,
+               net-tools, python-minimal
+Standards-Version: 3.9.3
+Homepage: http://xph.us/software/beanstalkd/
+Vcs-Git: git://git.debian.org/collab-maint/beanstalkd.git
+Vcs-Browser: http://git.debian.org/?p=collab-maint/beanstalkd.git
+
+Package: beanstalkd
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, netbase
+Suggests: doc-base
+Description: simple, in-memory, workqueue service
+ Beanstalkd is a simple, fast, workqueue service (a specific case of message
+ queueing), in which messages are organised in "tubes". Beanstalk clients can
+ insert and consume messages into and from such tubes.
+ .
+ The beanstalk interface is generic, but was originally designed for reducing
+ the latency of page views in high-volume web applications by running
+ time-consuming tasks asynchronously.
+ .
+ Beanstalkd is meant to be ran in a trusted network, as it has no
+ authorisation/authentication mechanisms.
+ .
+ This package has the server files.

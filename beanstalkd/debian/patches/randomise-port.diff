@@ -1,0 +1,15 @@
+# Description: randomise the listener port during build tests
+# Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=636964
+# Author: Serafeim Zanikolas <sez@debian.org>
+# Last-Update: 2011-08-14
+--- a/sh-tests/common.functions
++++ b/sh-tests/common.functions
+@@ -11,7 +11,7 @@
+ }
+ 
+ function start_beanstalkd {
+-    port=$start_port
++    port=$(($start_port + $RANDOM))
+     logdir="$1"
+     other_args="$2" # other_args and fiu are optional
+     fiu="$3"
