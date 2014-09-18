@@ -18,12 +18,15 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "tube.h"
 #include "job.h"
 #include "primes.h"
 #include "util.h"
 
+static uint64_t jobs_memory_usage = 0;
+static uint64_t max_jobs_memory_usage = 0;
 static uint64_t next_id = 1;
 
 static int cur_prime = 0;
@@ -40,6 +43,12 @@ static int
 _get_job_hash_index(uint64_t job_id)
 {
     return job_id % all_jobs_cap;
+}
+
+uint64_t
+get_jobs_memory_usage()
+{
+    return jobs_memory_usage;
 }
 
 static void
@@ -104,9 +113,13 @@ job_find(uint64_t job_id)
 job
 allocate_job(int body_size)
 {
-    job j;
+    size_t memory_used = sizeof(struct job) + body_size;
+    if ((jobs_memory_usage + memory_used) > max_jobs_memory_usage) {
+        return NULL;
+    }
 
-    j = malloc(sizeof(struct job) + body_size);
+    job j;
+    j = malloc(memory_used);
     if (!j) return twarnx("OOM"), (job) 0;
 
     j->id = 0;
@@ -120,6 +133,9 @@ allocate_job(int body_size)
     j->binlog = NULL;
     j->heap_index = 0;
     j->reserved_binlog_space = 0;
+    j->memory_used = memory_used;
+
+    jobs_memory_usage += memory_used;
 
     return j;
 }
@@ -168,6 +184,7 @@ job_free(job j)
 {
     if (j) {
         TUBE_ASSIGN(j->tube, NULL);
+        jobs_memory_usage -= j->memory_used;
         if (j->state != JOB_STATE_COPY) job_hash_free(j);
     }
 
@@ -205,6 +222,8 @@ job_copy(job j)
 
     n = malloc(sizeof(struct job) + j->body_size);
     if (!n) return twarnx("OOM"), (job) 0;
+
+    jobs_memory_usage += (sizeof(struct job) + j->body_size);
 
     memcpy(n, j, sizeof(struct job) + j->body_size);
     n->next = n->prev = n; /* not in a linked list */
@@ -274,9 +293,23 @@ get_all_jobs_used()
     return all_jobs_used;
 }
 
+static
+uint64_t
+parse_max_jobs_memory_usage()
+{
+    char *max_usage = getenv("JOBS_MAX_MEMORY");
+    if (max_usage == NULL) {
+        return ULLONG_MAX;
+    }
+
+    /* When it fails ULLONG_MAX is returned. */
+    return strtoull(max_usage, NULL, 10);
+}
+
 void
 job_init()
 {
+    max_jobs_memory_usage = parse_max_jobs_memory_usage();
     all_jobs = calloc(all_jobs_cap, sizeof(job));
     if (!all_jobs) {
         twarnx("Failed to allocate %d hash buckets", all_jobs_cap);

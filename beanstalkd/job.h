@@ -67,12 +67,15 @@ struct job {
     void *binlog;
     void *reserver;
     size_t reserved_binlog_space;
+    uint32_t memory_used;
 
     /* variable-size job data; written separately to the binlog */
     char body[];
 };
 
 #define make_job(pri,delay,ttr,body_size,tube) make_job_with_id(pri,delay,ttr,body_size,tube,0)
+
+uint64_t get_jobs_memory_usage();
 
 job allocate_job(int body_size);
 job make_job_with_id(unsigned int pri, usec delay, usec ttr,

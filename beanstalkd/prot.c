@@ -202,6 +202,7 @@ size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
     "binlog-oldest-index: %s\n" \
     "binlog-current-index: %s\n" \
     "binlog-max-size: %zu\n" \
+    "jobs_memory_usage: %" PRIu64 "\n" \
     "\r\n"
 
 #define STATS_TUBE_FMT "---\n" \
@@ -910,7 +911,8 @@ fmt_stats(char *buf, size_t size, void *x)
             uptime(),
             binlog_oldest_index(),
             binlog_current_index(),
-            binlog_size_limit);
+            binlog_size_limit,
+            get_jobs_memory_usage());
 
 }
 
