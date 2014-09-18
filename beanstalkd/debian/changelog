@@ -1,3 +1,9 @@
+beanstalkd (3.0.0) testing-proposed-updates; urgency=low
+
+  * Add a feature to limit memory usage via environment variable.
+
+ -- Stephan H <sh@sh.sh>  Thu, 18 Sep 2014 15:44:39 +0000
+
 beanstalkd (1.4.6-5) testing-proposed-updates; urgency=low
 
   * Add fix-empty-binlog-oom.diff (from upstream commit 70b63d5) to fix
