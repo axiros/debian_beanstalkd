@@ -55,7 +55,7 @@ am__EXEEXT_1 = beanstalkd$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)" \
 	"$(DESTDIR)$(docdir)"
 PROGRAMS = $(bin_PROGRAMS)
-am__objects_1 = aes.$(OBJEXT) auth.$(OBJEXT) binlog.$(OBJEXT) conn.$(OBJEXT) job.$(OBJEXT) \
+am__objects_1 = auth.$(OBJEXT) binlog.$(OBJEXT) conn.$(OBJEXT) job.$(OBJEXT) \
 	md5.$(OBJEXT) ms.$(OBJEXT) net.$(OBJEXT) port.$(OBJEXT) pq.$(OBJEXT) \
 	primes.$(OBJEXT) prot.$(OBJEXT) tube.$(OBJEXT) util.$(OBJEXT)
 am_beanstalkd_OBJECTS = beanstalkd.$(OBJEXT) $(am__objects_1)
@@ -203,7 +203,6 @@ AUTOMAKE_OPTIONS = foreign no-dependencies subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 program = beanstalkd
 aux_sources = \
-	aes.c \
 	auth.c \
 	binlog.c \
 	conn.c \
@@ -234,7 +233,6 @@ readme = \
 
 EXTRA_DIST = cut.c $(tests) $(scripts) $(readme) cut.h sh-tests check.sh check-one.sh \
 	beanstalkd.spec.in \
-	aes.h \
 	auth.h \
 	auth_types.h \
 	binlog.h \

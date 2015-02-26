@@ -5,7 +5,6 @@ program = beanstalkd
 
 bin_PROGRAMS = $(program)
 aux_sources = \
-	aes.c \
 	binlog.c \
 	conn.c \
 	job.c \

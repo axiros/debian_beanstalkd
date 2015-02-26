@@ -7,23 +7,17 @@
 
 #include "auth.h"
 #include "prot.h"
-
-#include <ctype.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "aes.h"
+#include "util.h"
 #include "md5.h"
 
+#include <ctype.h>
 /* creds repo */
 struct AUTH_RECORD_LIST *authStorage = NULL;
 static int use_auth = 0;
 
 #define MSG_NOT_AUTHZ "NOT_AUTHORIZED\r\n"
 #define MSG_AUTH_GRANTED "AUTH_GRANTED\r\n"
+#define MSG_AUTH_FAILED "AUTH_FAILED\r\n"
 
 #define MSG_AUTH_USER_FOUND "NONCE %s\r\n"
 #define MSG_AUTH_USER_NOT_FOUND "AUTH_USER_NOT_FOUND\r\n"
@@ -46,7 +40,7 @@ IS_AUTH()
 void
 printRecord(struct AUTH_RECORD_LIST* record)
 {
-    printf("AR: %s %d %s\n", record->user, (int) record->level, record->hash);
+    printf("AR: %s %s\n", record->user, record->hash);
 }
 
 void
@@ -71,24 +65,24 @@ zalloc(int n)
     }
     return p;
 }
-uint8_t*
+unsigned char*
 string2Bytes(char *in)
 {
     int i, n = strlen(in) / 2;
-    uint8_t *out = zalloc(n + 1);
+    unsigned char *out = zalloc(n + 1);
     char tmp[3];
 
     for (i = 0; i < n; i++) {
         tmp[0] = in[2 * i];
         tmp[1] = in[2 * i + 1];
         tmp[2] = '\0';
-        out[i] = (uint8_t) strtol(tmp, NULL, 16);
+        out[i] = (unsigned char) strtol(tmp, NULL, 16);
     }
     return out;
 }
 
 char*
-bytes2String(uint8_t * in, int n)
+bytes2String(unsigned char * in, int n)
 {
     char *out = zalloc(2 * n + 1);
     int i;
@@ -153,34 +147,12 @@ split(char* str, char* sep, size_t* len)
     return ret;
 }
 
-static ACCES_LEVEL
-getLevelFromString(const char* levelString)
-{
-#define TEST_LVLS(s,c,o) if (strncmp((s), (c), CONSTSTRLEN(c)) == 0) return (o);
-    TEST_LVLS(levelString, GROUP_ADMIN, ALL);
-    TEST_LVLS(levelString, GROUP_PRODUCER, PRODUCER);
-    TEST_LVLS(levelString, GROUP_CONSUMER, CONSUMER);
-    TEST_LVLS(levelString, GROUP_MONITOR, MONITOR);
-    return DENIED;
-}
-static char*
-getStringFromLevel(ACCES_LEVEL level)
-{
-#define TEST_LVLL(s,c,o) if (s==c) return (o);
-    TEST_LVLL(level, ALL, GROUP_ADMIN);
-    TEST_LVLL(level, PRODUCER, GROUP_PRODUCER);
-    TEST_LVLL(level, CONSUMER, GROUP_CONSUMER);
-    TEST_LVLL(level, MONITOR, GROUP_MONITOR);
-    return "";
-}
-
 struct AUTH_RECORD_LIST*
-createRecord(char *user, ACCES_LEVEL level, char *hash)
+createRecord(char *user, char *hash)
 {
     struct AUTH_RECORD_LIST *record = malloc(sizeof(struct AUTH_RECORD_LIST));
     if (record) {
         record->user = strdup(user);
-        record->level = level;
         record->hash = strdup(hash);
         toUpper(record->hash);
         record->next = NULL;
@@ -190,9 +162,9 @@ createRecord(char *user, ACCES_LEVEL level, char *hash)
 }
 
 int
-addRecord(char *user, ACCES_LEVEL level, char *hash)
+addRecord(char *user, char *hash)
 {
-    struct AUTH_RECORD_LIST *record = createRecord(user, level, hash);
+    struct AUTH_RECORD_LIST *record = createRecord(user, hash);
     if (!record) {
         return 0;
     }
@@ -239,11 +211,8 @@ loadAuthStorage(char* path)
         if (line[0] != '#') {
             size_t slen = 0;
             char** words = split(line, ":", &slen);
-            if (slen == 3) {
-                ACCES_LEVEL level = getLevelFromString(words[1]);
-                if (DENIED != level) {
-                    addRecord(words[0], level, words[2]);
-                }
+            if (slen == 2) {
+                addRecord(words[0], words[1]);
             }
         }
     }
@@ -254,10 +223,10 @@ loadAuthStorage(char* path)
     return authStorage != NULL ? 1 : 0;
 }
 
-uint8_t*
+unsigned char*
 generateNonce(int length)
 {
-    uint8_t* buf = zalloc(length);
+    unsigned char* buf = zalloc(length);
     FILE * fd = fopen("/dev/urandom", "r");
     if (fd != NULL) {
         int rc = fread(buf, length, 1, fd);
@@ -268,38 +237,14 @@ generateNonce(int length)
     return buf;
 }
 char*
-decodeAES(uint8_t* iv, char* in)
-{
-    int n = strlen(in) / 2;
-    char *out = zalloc(n + 1);
-    uint8_t *data = string2Bytes(in);
-    AES128_CBC_decrypt_buffer((uint8_t*) out, data, n, AES_KEY, iv);
-    // XXX:
-    free(data);
-    return out;
-}
-
-char*
 doMd5(char* in)
 {
     MD5_CTX ctx;
     MD5_Init(&ctx);
     MD5_Update(&ctx, in, strlen(in));
-    uint8_t res[16];
+    unsigned char res[16];
     MD5_Final(res, &ctx);
     return bytes2String(res, 16);
-}
-
-char*
-computePasswdHash(char* user, ACCES_LEVEL level, char* passwd)
-{
-    char* lvl = getStringFromLevel(level);
-    int sL = strlen(user) + strlen(lvl) + strlen(passwd) + 2 + 1;
-    char *tmp = zalloc(sL);
-    sprintf(tmp, "%s:%s:%s", user, lvl, passwd);
-    char *out = doMd5(tmp);
-    free(tmp);
-    return out;
 }
 
 void
@@ -312,10 +257,10 @@ do_auth1(conn conn, char* auth1)
     }
     conn->auth->record = record;
     if (strlen((char*) conn->auth->nonce) == 0) {
-        uint8_t *nonce = generateNonce(16);
+        unsigned char *nonce = generateNonce(8);
         free(conn->auth->nonce);
         conn->auth->nonce = nonce;
-        char *sNonce = bytes2String(conn->auth->nonce, 16);
+        char *sNonce = bytes2String(conn->auth->nonce, 8);
         reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, sNonce);
         return;
     }
@@ -325,16 +270,19 @@ void
 do_auth2(conn conn, char* auth2)
 {
     if (conn->auth->auth_ok) return;
-    char *passwd = decodeAES(conn->auth->nonce, auth2);
-    dbgprintf(">passwd %s\n", passwd);
-    char *hash = computePasswdHash(conn->auth->record->user,
-                                   conn->auth->record->level, passwd);
-    dbgprintf(">hash %s %s\n", hash, conn->auth->record->hash);
-
-    conn->auth->auth_ok = (strcmp(hash, conn->auth->record->hash) == 0);
-    free(passwd);
+    int n = strlen(conn->auth->record->hash) + 10;
+    // 8 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
+    char *tmp = zalloc(n);
+    sprintf(tmp, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
+    char *hash = doMd5(tmp);
+    dbgprintf(">hash %s %s\n", hash, auth2);
+    conn->auth->auth_ok = (strcmp(hash, auth2) == 0);
+    free(tmp);
     free(hash);
+    if (conn->auth->auth_ok)
     reply_msg(conn, MSG_AUTH_GRANTED);
+    else
+    reply_msg(conn, MSG_AUTH_FAILED);
 }
 
 void
