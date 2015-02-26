@@ -44,6 +44,10 @@ static void
 conn_free(conn c)
 {
     c->fd = 0;
+    if (c->auth) {
+        free(c->auth->nonce);
+        free(c->auth);
+    }
     conn_insert(&pool, c);
 }
 

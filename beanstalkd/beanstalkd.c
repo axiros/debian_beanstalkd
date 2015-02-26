@@ -34,6 +34,7 @@
 #include <event.h>
 #include <limits.h>
 
+#include "auth.h"
 #include "net.h"
 #include "util.h"
 #include "prot.h"
@@ -174,6 +175,8 @@ usage(char *msg, char *arg)
             " -p PORT  listen on port (default is 11300)\n"
             " -u USER  become user and group\n"
             " -z BYTES set the maximum job size in bytes (default is %d)\n"
+            " -A FILE  enable authentication\n"
+            "               FILE is the file with credentials\n"
             " -s BYTES set the size of each binlog file (default is %d)\n"
 #ifndef HAVE_POSIX_FALLOCATE
             "            (will be rounded up to a multiple of 512 bytes)\n"
@@ -239,6 +242,13 @@ opts(int argc, char **argv)
                 break;
             case 'b':
                 binlog_dir = require_arg("-b", argv[++i]);
+                break;
+            case 'A':
+                if (loadAuthStorage(require_arg("-A", argv[++i])) == 1) {
+                    SET_AUTH();
+                } else {
+                    usage("problem loading cred file", argv[i]);
+                }
                 break;
             case 'h':
                 usage(NULL, NULL);

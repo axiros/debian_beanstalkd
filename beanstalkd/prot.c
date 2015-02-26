@@ -39,7 +39,8 @@
 #include "util.h"
 #include "net.h"
 #include "binlog.h"
-
+#include "auth.h"
+#include "auth_types.h"
 /* job body cannot be greater than this many bytes long */
 size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
 
@@ -96,66 +97,12 @@ size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
 #define CMD_STATS_TUBE_LEN CONSTSTRLEN(CMD_STATS_TUBE)
 #define CMD_PAUSE_TUBE_LEN CONSTSTRLEN(CMD_PAUSE_TUBE)
 
-#define MSG_FOUND "FOUND"
-#define MSG_NOTFOUND "NOT_FOUND\r\n"
-#define MSG_RESERVED "RESERVED"
-#define MSG_DEADLINE_SOON "DEADLINE_SOON\r\n"
-#define MSG_TIMED_OUT "TIMED_OUT\r\n"
-#define MSG_DELETED "DELETED\r\n"
-#define MSG_RELEASED "RELEASED\r\n"
-#define MSG_BURIED "BURIED\r\n"
-#define MSG_TOUCHED "TOUCHED\r\n"
-#define MSG_BURIED_FMT "BURIED %llu\r\n"
-#define MSG_INSERTED_FMT "INSERTED %llu\r\n"
-#define MSG_NOT_IGNORED "NOT_IGNORED\r\n"
-
 #define MSG_NOTFOUND_LEN CONSTSTRLEN(MSG_NOTFOUND)
 #define MSG_DELETED_LEN CONSTSTRLEN(MSG_DELETED)
 #define MSG_TOUCHED_LEN CONSTSTRLEN(MSG_TOUCHED)
 #define MSG_RELEASED_LEN CONSTSTRLEN(MSG_RELEASED)
 #define MSG_BURIED_LEN CONSTSTRLEN(MSG_BURIED)
 #define MSG_NOT_IGNORED_LEN CONSTSTRLEN(MSG_NOT_IGNORED)
-
-#define MSG_OUT_OF_MEMORY "OUT_OF_MEMORY\r\n"
-#define MSG_INTERNAL_ERROR "INTERNAL_ERROR\r\n"
-#define MSG_DRAINING "DRAINING\r\n"
-#define MSG_BAD_FORMAT "BAD_FORMAT\r\n"
-#define MSG_UNKNOWN_COMMAND "UNKNOWN_COMMAND\r\n"
-#define MSG_EXPECTED_CRLF "EXPECTED_CRLF\r\n"
-#define MSG_JOB_TOO_BIG "JOB_TOO_BIG\r\n"
-
-#define STATE_WANTCOMMAND 0
-#define STATE_WANTDATA 1
-#define STATE_SENDJOB 2
-#define STATE_SENDWORD 3
-#define STATE_WAIT 4
-#define STATE_BITBUCKET 5
-
-#define OP_UNKNOWN 0
-#define OP_PUT 1
-#define OP_PEEKJOB 2
-#define OP_RESERVE 3
-#define OP_DELETE 4
-#define OP_RELEASE 5
-#define OP_BURY 6
-#define OP_KICK 7
-#define OP_STATS 8
-#define OP_JOBSTATS 9
-#define OP_PEEK_BURIED 10
-#define OP_USE 11
-#define OP_WATCH 12
-#define OP_IGNORE 13
-#define OP_LIST_TUBES 14
-#define OP_LIST_TUBE_USED 15
-#define OP_LIST_TUBES_WATCHED 16
-#define OP_STATS_TUBE 17
-#define OP_PEEK_READY 18
-#define OP_PEEK_DELAYED 19
-#define OP_RESERVE_TIMEOUT 20
-#define OP_TOUCH 21
-#define OP_QUIT 22
-#define OP_PAUSE_TUBE 23
-#define TOTAL_OPS 24
 
 #define STATS_FMT "---\n" \
     "current-jobs-urgent: %u\n" \
@@ -280,7 +227,11 @@ static const char * op_names[] = {
     CMD_RESERVE_TIMEOUT,
     CMD_TOUCH,
     CMD_QUIT,
-    CMD_PAUSE_TUBE
+    CMD_PAUSE_TUBE,
+    "",
+    CMD_AUTH1,
+    CMD_AUTH2
+
 };
 #endif
 
@@ -292,7 +243,7 @@ buried_job_p(tube t)
     return job_list_any_p(&t->buried);
 }
 
-static void
+void
 reply(conn c, const char *line, int len, int state)
 {
     int r;
@@ -314,7 +265,7 @@ reply(conn c, const char *line, int len, int state)
 #define reply_serr(c,e) (twarnx("server error: %s",(e)),\
                          reply_msg((c),(e)))
 
-static void
+void
 reply_line(conn c, int state, const char *fmt, ...)
 {
     int r;
@@ -762,6 +713,11 @@ which_cmd(conn c)
     TEST_CMD(c->cmd, CMD_LIST_TUBES, OP_LIST_TUBES);
     TEST_CMD(c->cmd, CMD_QUIT, OP_QUIT);
     TEST_CMD(c->cmd, CMD_PAUSE_TUBE, OP_PAUSE_TUBE);
+    if(IS_AUTH()){
+        if(c->auth && !c->auth->auth_ok)
+        TEST_CMD(c->cmd, CMD_AUTH1, OP_AUTH1);
+        TEST_CMD(c->cmd, CMD_AUTH2, OP_AUTH2);
+    }
     return OP_UNKNOWN;
 }
 
@@ -1181,7 +1137,8 @@ dispatch_cmd(conn c)
 
     type = which_cmd(c);
     dbgprintf("got %s command: \"%s\"\n", op_names[(int) type], c->cmd);
-
+    authConn(c, type);
+    if(STATE_SENDWORD == c->state) return;
     switch (type) {
     case OP_PUT:
         r = read_pri(&pri, c->cmd + 4, &delay_buf);
@@ -1810,11 +1767,21 @@ h_accept(const int fd, const short which, struct event *ev)
     r = fcntl(cfd, F_SETFL, flags | O_NONBLOCK);
     if (r < 0) return twarn("setting O_NONBLOCK"), close(cfd), v();
 
+    Auth* auth = NULL;
+    if (IS_AUTH()) {
+        auth = new(Auth);
+        if (!auth) return twarnx("make of auth failed"), close(cfd), brake();
+        auth->auth_ok = 0;
+        auth->record = NULL;
+        auth->nonce = zalloc(1);
+    }
     c = make_conn(cfd, STATE_WANTCOMMAND, default_tube, default_tube);
     if (!c) return twarnx("make_conn() failed"), close(cfd), brake();
+    c->auth = auth;
 
     dbgprintf("accepted conn, fd=%d\n", cfd);
     r = conn_set_evq(c, EV_READ | EV_PERSIST, (evh) h_conn);
+    if (IS_AUTH())  reply_msg(c, MSG_AUTH_ENABLED);
     if (r == -1) return twarnx("conn_set_evq() failed"), close(cfd), brake();
 }
 

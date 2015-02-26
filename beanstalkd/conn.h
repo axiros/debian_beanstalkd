@@ -21,6 +21,7 @@
 
 #include <sys/types.h>
 #include <event.h>
+#include "auth_types.h"
 #include "ms.h"
 #include "tube.h"
 #include "job.h"
@@ -75,6 +76,7 @@ struct conn {
     struct job reserved_jobs; /* doubly-linked list header */
     tube use;
     struct ms watch;
+    Auth *auth;
 };
 
 conn make_conn(int fd, char start_state, tube use, tube watch);

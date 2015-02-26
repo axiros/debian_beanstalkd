@@ -5,9 +5,11 @@ program = beanstalkd
 
 bin_PROGRAMS = $(program)
 aux_sources = \
+	aes.c \
 	binlog.c \
 	conn.c \
 	job.c \
+	md5.c \
 	ms.c \
 	net.c \
 	port.c \
@@ -35,6 +37,7 @@ readme = \
 
 EXTRA_DIST = cut.c $(tests) $(scripts) $(readme) cut.h sh-tests check.sh check-one.sh \
 	beanstalkd.spec.in \
+	auth.h \
 	binlog.h \
 	conn.h \
 	job.h \
