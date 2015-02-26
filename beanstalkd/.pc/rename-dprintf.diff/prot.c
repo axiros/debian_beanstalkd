@@ -1178,8 +1178,9 @@ dispatch_cmd(conn c)
     }
 
     type = which_cmd(c);
+#ifdef DEBUG
     dprintf("got %s command: \"%s\"\n", op_names[(int) type], c->cmd);
-
+#endif
     switch (type) {
     case OP_PUT:
         r = read_pri(&pri, c->cmd + 4, &delay_buf);
