@@ -10,6 +10,7 @@
 #include "util.h"
 #include "md5.h"
 
+#include <stdio.h>
 #include <ctype.h>
 /* creds repo */
 struct AUTH_RECORD_LIST *authStorage = NULL;
@@ -256,11 +257,11 @@ do_auth1(conn conn, char* auth1)
         return;
     }
     conn->auth->record = record;
-    if (strlen((char*) conn->auth->nonce) == 0) {
+    if (strlen(conn->auth->nonce) == 0) {
         unsigned char *nonce = generateNonce(8);
+        char *sNonce = bytes2String(nonce, 8);
         free(conn->auth->nonce);
-        conn->auth->nonce = nonce;
-        char *sNonce = bytes2String(conn->auth->nonce, 8);
+        conn->auth->nonce = sNonce;
         reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, sNonce);
         return;
     }
@@ -270,8 +271,8 @@ void
 do_auth2(conn conn, char* auth2)
 {
     if (conn->auth->auth_ok) return;
-    int n = strlen(conn->auth->record->hash) + 10;
-    // 8 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
+    int n = strlen(conn->auth->record->hash) + 18;
+    // 16 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
     char *tmp = zalloc(n);
     sprintf(tmp, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
     char *hash = doMd5(tmp);

@@ -22,7 +22,7 @@ typedef struct Auth
 {
 int auth_ok;
 AUTH_RECORD_LIST *record;
-unsigned char *nonce;
+char *nonce;
 } Auth;
 
 #endif /* AUTH_TYPES_H_ */
