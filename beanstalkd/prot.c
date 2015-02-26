@@ -361,7 +361,7 @@ process_queue()
 
     dbgprintf("processing queue\n");
     while ((j = next_eligible_job(now))) {
-        dbgprintf("got eligible job %llu in %s\n", j->id, j->tube->name);
+        dbgprintf("got eligible job %llu in %s\n", (long long unsigned int) j->id, j->tube->name);
         j = pq_take(&j->tube->ready);
         ready_ct--;
         if (j->pri < URGENT_THRESHOLD) {
