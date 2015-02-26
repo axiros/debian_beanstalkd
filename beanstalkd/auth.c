@@ -23,8 +23,8 @@ static int use_auth = 0;
 #define MSG_AUTH_USER_FOUND "NONCE %s\r\n"
 #define MSG_AUTH_USER_NOT_FOUND "AUTH_USER_NOT_FOUND\r\n"
 
-#define AUTH1_MAX_LENGTH LINE_BUF_SIZE - CMD_AUTH1_LEN
-#define AUTH2_MAX_LENGTH LINE_BUF_SIZE - CMD_AUTH2_LEN
+#define AUTH1_MAX_LENGTH (LINE_BUF_SIZE - CMD_AUTH1_LEN)
+#define AUTH2_MAX_LENGTH (LINE_BUF_SIZE - CMD_AUTH2_LEN)
 
 void
 SET_AUTH()
@@ -256,6 +256,7 @@ do_auth1(conn conn, char* auth1)
         reply_msg(conn, MSG_AUTH_USER_NOT_FOUND);
         return;
     }
+
     conn->auth->record = record;
     if (strlen(conn->auth->nonce) == 0) {
         unsigned char *nonce = generateNonce(8);
@@ -263,64 +264,76 @@ do_auth1(conn conn, char* auth1)
         free(conn->auth->nonce);
         conn->auth->nonce = sNonce;
         reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, sNonce);
-        return;
     }
 }
 
 void
 do_auth2(conn conn, char* auth2)
 {
-    if (conn->auth->auth_ok) return;
+    if (conn->auth->auth_ok) {
+        return;
+    }
+
     int n = strlen(conn->auth->record->hash) + 18;
     // 16 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
     char *tmp = zalloc(n);
     sprintf(tmp, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
     char *hash = doMd5(tmp);
-    dbgprintf(">hash %s %s\n", hash, auth2);
     conn->auth->auth_ok = (strcmp(hash, auth2) == 0);
     free(tmp);
     free(hash);
-    if (conn->auth->auth_ok)
-    reply_msg(conn, MSG_AUTH_GRANTED);
-    else
-    reply_msg(conn, MSG_AUTH_FAILED);
+
+    if (conn->auth->auth_ok) {
+        reply_msg(conn, MSG_AUTH_GRANTED);
+    }
+    else {
+        reply_msg(conn, MSG_AUTH_FAILED);
+    }
 }
 
 void
 authConn(conn conn, int op)
 {
-    if (IS_AUTH() && op != OP_UNKNOWN && op != OP_QUIT) {
-        if (!conn->auth) {
-            reply_serr(conn, MSG_INTERNAL_ERROR);
-            return;
-        }
-        if (conn->auth->auth_ok) return;
-        char* name;
-        size_t len;
-        switch (op) {
-            case OP_AUTH1:
-                name = conn->cmd + CMD_AUTH1_LEN;
-                len = strlen(name);
-                if (len <= 0 || len > AUTH1_MAX_LENGTH) {
-                    reply_msg(conn, MSG_BAD_FORMAT);
-                    return;
-                }
-                do_auth1(conn, name);
-                break;
-            case OP_AUTH2:
-                name = conn->cmd + CMD_AUTH2_LEN;
-                len = strlen(name);
-                if (len <= 0 || len > AUTH1_MAX_LENGTH || len % 16) {
-                    reply_msg(conn, MSG_BAD_FORMAT);
-                    return;
-                }
-                do_auth2(conn, name);
-                break;
-        }
-        if (conn->state != STATE_SENDWORD && !conn->auth->auth_ok) {
-            reply_msg(conn, MSG_NOT_AUTHZ);
-            return;
-        }
+    if (!(IS_AUTH() && op != OP_UNKNOWN && op != OP_QUIT)) {
+        return;
+    }
+
+    if (!conn->auth) {
+        reply_serr(conn, MSG_INTERNAL_ERROR);
+        return;
+    }
+
+    if (conn->auth->auth_ok) {
+        return;
+    }
+
+    char* name=NULL;
+    size_t len=0;
+
+    switch (op) {
+        case OP_AUTH1:
+            name = conn->cmd + CMD_AUTH1_LEN;
+            len = strlen(name);
+            if ((len <= 0) || (len > AUTH1_MAX_LENGTH)) {
+                reply_msg(conn, MSG_BAD_FORMAT);
+                return;
+            }
+            do_auth1(conn, name);
+            break;
+
+        case OP_AUTH2:
+            name = conn->cmd + CMD_AUTH2_LEN;
+            len = strlen(name);
+            if ((len <= 0) || (len > AUTH1_MAX_LENGTH) || (len % 16)) {
+                reply_msg(conn, MSG_BAD_FORMAT);
+                return;
+            }
+            do_auth2(conn, name);
+            break;
+    }
+
+    if (conn->state != STATE_SENDWORD && !conn->auth->auth_ok) {
+        reply_msg(conn, MSG_NOT_AUTHZ);
+        return;
     }
 }
-
