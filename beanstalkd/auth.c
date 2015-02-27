@@ -11,6 +11,7 @@
 #include "md5.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 /* creds repo */
 struct AUTH_RECORD_LIST *authStorage = NULL;
@@ -207,14 +208,19 @@ generateNonce(char* out, int length)
     int bin_length = length / 2;
     unsigned char buf[bin_length];
 
-    FILE * fd = fopen("/dev/urandom", "r");
+    FILE* fd = fopen("/dev/urandom", "r");
     if (fd != NULL) {
-        int rc = fread(buf, bin_length, 1, fd);
-        if (!rc) rc = fread(buf, bin_length, 1, fd); // give it another chance
-        /*WORST-CASE-SCENARIO ... fails to read -> nonce is all 0 if nothing blows up :D */
+        int rc = fread(buf, 1, bin_length, fd);
         fclose(fd);
-    }
 
+        /* If the fread fails, use at least pseudo randomness. */
+        if (rc != bin_length) {
+            int i;
+            for (i=0; i < bin_length; ++i) {
+                buf[i] = (unsigned char)(random());
+            }
+        }
+    }
     return bytes2String(out, buf, bin_length);
 }
 
