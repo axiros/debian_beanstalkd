@@ -224,19 +224,23 @@ loadAuthStorage(char* path)
     return authStorage != NULL ? 1 : 0;
 }
 
-unsigned char*
+char*
 generateNonce(int length)
 {
-    unsigned char* buf = zalloc(length);
+    int bin_length = length / 2;
+    unsigned char buf[bin_length];
+
     FILE * fd = fopen("/dev/urandom", "r");
     if (fd != NULL) {
-        int rc = fread(buf, length, 1, fd);
-        if (!rc) rc = fread(buf, length, 1, fd); // give it another chance
+        int rc = fread(buf, bin_length, 1, fd);
+        if (!rc) rc = fread(buf, bin_length, 1, fd); // give it another chance
         /*WORST-CASE-SCENARIO ... fails to read -> nonce is all 0 if nothing blows up :D */
         fclose(fd);
     }
-    return buf;
+
+    return bytes2String(buf, bin_length);
 }
+
 char*
 doMd5(char* in)
 {
@@ -259,11 +263,10 @@ do_auth1(conn conn, char* auth1)
 
     conn->auth->record = record;
     if (strlen(conn->auth->nonce) == 0) {
-        unsigned char *nonce = generateNonce(8);
-        char *sNonce = bytes2String(nonce, 8);
-        strncpy(conn->auth->nonce, sNonce, NONCE_SIZE + 1);
-        free(nonce);
+        char* sNonce = generateNonce(NONCE_SIZE);
+        strncpy(conn->auth->nonce, sNonce, NONCE_SIZE);
         free(sNonce);
+
         reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, conn->auth->nonce);
     }
 }
