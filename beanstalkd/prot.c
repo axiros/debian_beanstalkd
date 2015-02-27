@@ -1777,7 +1777,7 @@ h_accept(const int fd, const short which, struct event *ev)
         auth->record = NULL;
     }
     c = make_conn(cfd, STATE_WANTCOMMAND, default_tube, default_tube);
-    if (!c) return twarnx("make_conn() failed"), close(cfd), brake();
+    if (!c) return twarnx("make_conn() failed"), free(auth), close(cfd), brake();
     c->auth = auth;
 
     dbgprintf("accepted conn, fd=%d\n", cfd);
