@@ -30,12 +30,8 @@
 #define MSG_AUTH_ENABLED "AUTH_REQUIRED\r\n"
 
 /* exposed methods */
-void
-SET_AUTH();
-int
-IS_AUTH();
-int
-loadAuthStorage(char*);
-void
-authConn(conn, int);
+void SET_AUTH();
+int IS_AUTH();
+int loadAuthStorage(char*);
+void authConn(conn, int);
 #endif /* AUTH_H_ */
