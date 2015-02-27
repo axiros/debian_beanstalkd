@@ -12,7 +12,7 @@ commands="$1"; shift
 expected="$1"; shift
 
 # Allow generic tests to specify their own behavior completely.
-test -x $commands && exec $commands
+test -x $commands && test ${commands##*.} == "sh" && exec $commands
 
 cleanup() {
     {
@@ -41,4 +41,5 @@ fgrep -v "#" $commands | $nc $server $port > "$tmpf"
 
 # Check the output
 diff $expected "$tmpf"
+
 

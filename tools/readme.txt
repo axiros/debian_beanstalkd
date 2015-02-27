@@ -1,5 +1,5 @@
 beanstalkc.py :
-	is a modified version of the official v0.4.0 driver enabling connection to servers with auth ON
+	is a modified version of the version distributed with ax* (0.2.1-ax) driver enabling connection to servers with auth ON
 	there is a new class AuthConnection, which extends the normal Connection, adding the possibility to add an username and password
 	also (to easen the usage of auth servers on actual envs) the connection class transparently reads the creds from a file in a specific path
 	
