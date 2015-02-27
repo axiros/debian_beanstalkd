@@ -82,15 +82,18 @@ string2Bytes(char *in)
     return out;
 }
 
-char*
-bytes2String(unsigned char * in, int n)
+void
+bytes2String(
+    char* out,
+    unsigned char* in,
+    int in_size)
 {
-    char *out = zalloc(2 * n + 1);
+    memset(out, 0, (in_size * 2) + 1);
+
     int i;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < in_size; i++) {
         sprintf(out + (2 * i), "%.2X", in[i]);
     }
-    return out;
 }
 
 inline int
@@ -224,8 +227,8 @@ loadAuthStorage(char* path)
     return authStorage != NULL ? 1 : 0;
 }
 
-char*
-generateNonce(int length)
+void
+generateNonce(char* out, int length)
 {
     int bin_length = length / 2;
     unsigned char buf[bin_length];
@@ -238,18 +241,19 @@ generateNonce(int length)
         fclose(fd);
     }
 
-    return bytes2String(buf, bin_length);
+    return bytes2String(out, buf, bin_length);
 }
 
-char*
-doMd5(char* in)
+void
+doMd5(char* out, char* in)
 {
     MD5_CTX ctx;
     MD5_Init(&ctx);
     MD5_Update(&ctx, in, strlen(in));
     unsigned char res[16];
     MD5_Final(res, &ctx);
-    return bytes2String(res, 16);
+
+    return bytes2String(out, res, 16);
 }
 
 void
@@ -263,10 +267,7 @@ do_auth1(conn conn, char* auth1)
 
     conn->auth->record = record;
     if (strlen(conn->auth->nonce) == 0) {
-        char* sNonce = generateNonce(NONCE_SIZE);
-        strncpy(conn->auth->nonce, sNonce, NONCE_SIZE);
-        free(sNonce);
-
+        generateNonce(conn->auth->nonce, NONCE_SIZE);
         reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, conn->auth->nonce);
     }
 }
@@ -282,10 +283,12 @@ do_auth2(conn conn, char* auth2)
     // 16 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
     char *tmp = zalloc(n);
     sprintf(tmp, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
-    char *hash = doMd5(tmp);
+
+    char hash[33];
+    doMd5(hash, tmp);
+
     conn->auth->auth_ok = (strcmp(hash, auth2) == 0);
     free(tmp);
-    free(hash);
 
     if (conn->auth->auth_ok) {
         reply_msg(conn, MSG_AUTH_GRANTED);
