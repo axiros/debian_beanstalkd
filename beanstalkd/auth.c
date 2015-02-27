@@ -261,9 +261,10 @@ do_auth1(conn conn, char* auth1)
     if (strlen(conn->auth->nonce) == 0) {
         unsigned char *nonce = generateNonce(8);
         char *sNonce = bytes2String(nonce, 8);
-        free(conn->auth->nonce);
-        conn->auth->nonce = sNonce;
-        reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, sNonce);
+        strncpy(conn->auth->nonce, sNonce, NONCE_SIZE + 1);
+        free(nonce);
+        free(sNonce);
+        reply_line(conn, STATE_SENDWORD, MSG_AUTH_USER_FOUND, conn->auth->nonce);
     }
 }
 

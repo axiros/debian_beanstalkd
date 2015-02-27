@@ -1773,7 +1773,6 @@ h_accept(const int fd, const short which, struct event *ev)
         if (!auth) return twarnx("make of auth failed"), close(cfd), brake();
         auth->auth_ok = 0;
         auth->record = NULL;
-        auth->nonce = zalloc(1);
     }
     c = make_conn(cfd, STATE_WANTCOMMAND, default_tube, default_tube);
     if (!c) return twarnx("make_conn() failed"), close(cfd), brake();
