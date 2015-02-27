@@ -192,6 +192,7 @@ loadAuthStorage(char* path)
             free(words);
         }
     }
+    free(line);
     fclose(fp);
 #ifdef DEBUG
     printStorage();
