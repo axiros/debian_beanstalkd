@@ -170,30 +170,34 @@ loadAuthStorage(char* path)
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
-    ssize_t read;
 
     fp = fopen(path, "r");
-    if (fp == NULL) return -1;
+    if (fp == NULL) {
+        return -1;
+    }
 
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while (getline(&line, &len, fp) != -1) {
         char* trimed_line = trim(line);
-        if (trimed_line[0] != '#') {
-            size_t slen = 0;
-            char** words = split(trimed_line, ":", &slen);
-            if (slen == 2) {
-                addRecord(words[0], words[1]);
-            }
-
-            /* Cleanup the mallocs form split. */
-            int i;
-            for (i=0; i < slen; ++i) {
-                free(words[i]);
-            }
-            free(words);
+        if (trimed_line[0] == '#') {
+            continue;
         }
+
+        size_t slen = 0;
+        char** words = split(trimed_line, ":", &slen);
+        if (slen == 2) {
+            addRecord(words[0], words[1]);
+        }
+
+        /* Cleanup the mallocs form split. */
+        int i;
+        for (i=0; i < slen; ++i) {
+            free(words[i]);
+        }
+        free(words);
     }
     free(line);
     fclose(fp);
+
 #ifdef DEBUG
     printStorage();
 #endif
