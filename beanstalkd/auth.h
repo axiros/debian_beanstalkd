@@ -30,9 +30,6 @@
 #define MSG_AUTH_ENABLED "AUTH_REQUIRED\r\n"
 
 /* exposed methods */
-void*
-zalloc(int n);
-#define new(T) zalloc(sizeof(T))
 void
 SET_AUTH();
 int

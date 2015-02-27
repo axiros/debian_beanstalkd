@@ -55,17 +55,6 @@ printStorage()
 }
 /* temp end */
 /****** crypt/hash util *****/
-void*
-zalloc(int n)
-{
-    void *p;
-
-    p = malloc(n);
-    if (p) {
-        memset(p, 0, n);
-    }
-    return p;
-}
 
 void
 bytes2String(

@@ -1769,8 +1769,10 @@ h_accept(const int fd, const short which, struct event *ev)
 
     Auth* auth = NULL;
     if (IS_AUTH()) {
-        auth = new(Auth);
+        auth = malloc(sizeof(Auth));
         if (!auth) return twarnx("make of auth failed"), close(cfd), brake();
+
+        memset(auth, 0, sizeof(Auth));
         auth->auth_ok = 0;
         auth->record = NULL;
     }
