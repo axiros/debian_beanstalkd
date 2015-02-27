@@ -24,8 +24,6 @@ static int use_auth = 0;
 #define MSG_AUTH_USER_FOUND "NONCE %s\r\n"
 #define MSG_AUTH_USER_NOT_FOUND "AUTH_USER_NOT_FOUND\r\n"
 
-#define AUTH1_MAX_LENGTH (LINE_BUF_SIZE - CMD_AUTH1_LEN)
-#define AUTH2_MAX_LENGTH (LINE_BUF_SIZE - CMD_AUTH2_LEN)
 
 void
 SET_AUTH()
@@ -300,7 +298,7 @@ authConn(conn conn, int op)
         case OP_AUTH1:
             name = conn->cmd + CMD_AUTH1_LEN;
             len = strlen(name);
-            if ((len <= 0) || (len > AUTH1_MAX_LENGTH)) {
+            if (len <= 0) {
                 reply_msg(conn, MSG_BAD_FORMAT);
                 return;
             }
@@ -310,7 +308,7 @@ authConn(conn conn, int op)
         case OP_AUTH2:
             name = conn->cmd + CMD_AUTH2_LEN;
             len = strlen(name);
-            if ((len <= 0) || (len > AUTH1_MAX_LENGTH) || (len % 16)) {
+            if ((len <= 0) || (len % 16)) {
                 reply_msg(conn, MSG_BAD_FORMAT);
                 return;
             }
