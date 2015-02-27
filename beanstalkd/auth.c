@@ -176,10 +176,10 @@ loadAuthStorage(char* path)
     if (fp == NULL) return -1;
 
     while ((read = getline(&line, &len, fp)) != -1) {
-        line = trim(line);
-        if (line[0] != '#') {
+        char* trimed_line = trim(line);
+        if (trimed_line[0] != '#') {
             size_t slen = 0;
-            char** words = split(line, ":", &slen);
+            char** words = split(trimed_line, ":", &slen);
             if (slen == 2) {
                 addRecord(words[0], words[1]);
             }
