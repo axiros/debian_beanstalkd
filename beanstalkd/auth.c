@@ -66,21 +66,6 @@ zalloc(int n)
     }
     return p;
 }
-unsigned char*
-string2Bytes(char *in)
-{
-    int i, n = strlen(in) / 2;
-    unsigned char *out = zalloc(n + 1);
-    char tmp[3];
-
-    for (i = 0; i < n; i++) {
-        tmp[0] = in[2 * i];
-        tmp[1] = in[2 * i + 1];
-        tmp[2] = '\0';
-        out[i] = (unsigned char) strtol(tmp, NULL, 16);
-    }
-    return out;
-}
 
 void
 bytes2String(
