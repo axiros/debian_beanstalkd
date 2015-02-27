@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 /* creds repo */
 struct AUTH_RECORD_LIST *authStorage = NULL;
 static int use_auth = 0;
@@ -69,11 +70,6 @@ bytes2String(
     }
 }
 
-inline int
-COUNT_CHARS(char* s, char c)
-{
-    return *s == '\0' ? 0 : COUNT_CHARS(s + 1, c) + (*s == c);
-}
 void
 toUpper(char* in)
 {
@@ -82,6 +78,7 @@ toUpper(char* in)
         in[i] = toupper(in[i]);
     }
 }
+
 char *
 trim(char *str)
 {
@@ -99,29 +96,24 @@ trim(char *str)
 
     return str;
 }
-char**
-split(char* str, char* sep, size_t* len)
-{
-    if (str == NULL || str[0] == '\0') {
-        *len = 0;
-        return NULL;
-    }
-    int i, sc;
-    sc = COUNT_CHARS(str, sep[0]) + 1;
 
-    char** ret = (char**) malloc(sizeof(char*) * sc);
-    *len = 0;
-    char *rest = strdup(str);
-    char *token;
-    i = 0;
-    while (i < sc) {
-        token = strsep(&rest, sep);
-        ret[i] = malloc(strlen(token) + 1);
-        ret[i] = token;
-        i++;
+char**
+split(char* input, const char* delim, size_t* out_len)
+{
+    char** out = NULL;
+    int size = 0;
+
+    char* saveptr;
+    char* word;
+
+    word = strtok_r(input, delim, &saveptr);
+    while (word != NULL) {
+        out = realloc(out, sizeof(char*) * (size + 1));
+        out[size++] = strdup(word);
+        word = strtok_r(NULL, delim, &saveptr);
     }
-    *len = sc;
-    return ret;
+    *out_len = size;
+    return out;
 }
 
 struct AUTH_RECORD_LIST*
@@ -191,6 +183,13 @@ loadAuthStorage(char* path)
             if (slen == 2) {
                 addRecord(words[0], words[1]);
             }
+
+            /* Cleanup the mallocs form split. */
+            int i;
+            for (i=0; i < slen; ++i) {
+                free(words[i]);
+            }
+            free(words);
         }
     }
     fclose(fp);
