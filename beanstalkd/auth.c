@@ -264,16 +264,15 @@ do_auth2(conn conn, char* auth2)
         return;
     }
 
-    int n = strlen(conn->auth->record->hash) + 18;
-    // 16 = strlen((char*)conn->auth->nonce), 1 for ":", 1 for \0
-    char *tmp = zalloc(n);
-    sprintf(tmp, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
+    /* +2 for ':' and null byte. */
+    int sig_len = strlen(conn->auth->record->hash) + NONCE_SIZE + 2;
+    char signature[sig_len];
+    sprintf(signature, "%s:%s", conn->auth->record->hash, conn->auth->nonce);
 
     char hash[33];
-    doMd5(hash, tmp);
+    doMd5(hash, signature);
 
     conn->auth->auth_ok = (strcmp(hash, auth2) == 0);
-    free(tmp);
 
     if (conn->auth->auth_ok) {
         reply_msg(conn, MSG_AUTH_GRANTED);
