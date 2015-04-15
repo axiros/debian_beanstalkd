@@ -15,33 +15,27 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-@modified_by: Mihai HARAS (AsharLohmar)
-@modified_on: Feb 23, 2015
-    added authentication
 '''
 
 __version__ = '0.2.1-ax'
 
 import logging
 import socket
+import hashlib
 
 
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 11300
-DEFAULT_PRIORITY = 2 ** 31
+DEFAULT_PRIORITY = 2**31
 DEFAULT_TTR = 120
 
-TAG_AUTH_REQ = "AUTH_REQUIRED"
-TAG_NOT_AUTHORIZED = "NOT_AUTHORIZED"
-DEF_CRED_FILE = "/etc/default/beanstalkd_users"
 
 class BeanstalkcException(Exception): pass
 class UnexpectedResponse(BeanstalkcException): pass
 class CommandFailed(BeanstalkcException): pass
 class DeadlineSoon(BeanstalkcException): pass
-class AuthenticationException(BeanstalkcException): pass
-class AuthorizationException(BeanstalkcException): pass
-
+class AuthenticationError(BeanstalkcException): pass
+class AuthorizationError(BeanstalkcException): pass
 
 class SocketError(BeanstalkcException):
     @staticmethod
@@ -54,11 +48,11 @@ class SocketError(BeanstalkcException):
 
 class Connection(object):
     def __init__(
-            self,
-            host=DEFAULT_HOST,
-            port=DEFAULT_PORT,
-            parse_yaml=True,
-            connection_timeout=socket.getdefaulttimeout()):
+        self,
+        host=DEFAULT_HOST,
+        port=DEFAULT_PORT,
+        parse_yaml=True,
+        connection_timeout=socket.getdefaulttimeout()):
 
         if parse_yaml is True:
             try:
@@ -70,84 +64,83 @@ class Connection(object):
         self._connection_timeout = connection_timeout
         self.host = host
         self.port = port
-        self.use_auth = False
-        self.auth_runs = 0
+        self._username = None
+        self._pw_hash = None
         self.connect()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):  # @UnusedVariable
-        self.close()
-
-    def _prepareCreds(self):
-        import os
-        path = os.environ.get("BEANSTALK_CREDS", DEF_CRED_FILE)
-        if not os.path.isfile(path) or not os.access(path, os.R_OK):
-            raise AuthenticationException("Creds file not found or not accessible")
-        try:
-            with open(path) as cf:
-                for line in cf:
-                    if not line:
-                        continue
-                    line = line.strip()
-                    if line or line[0] == "#":
-                        continue
-                    self.user, self.hash = line.strip().split(":")
-                    self.hash = self.hash.upper()
-        except Exception as e:
-            raise AuthenticationException(e)
-
-        if getattr(self, "user", None) is None:
-            raise AuthenticationException("Creds not found")
-
-    def authenticate(self):
-        if not isinstance(self, AuthConnection):
-            self._prepareCreds()
-        nonce = self._interact('auth1 %s\r\n' % self.user,
-                               ["NONCE"],
-                               ["AUTH_USER_NOT_FOUND", "AUTH_GENERAL_ERROR"])
-        if not nonce or not nonce[0]:
-            raise AuthenticationException("no nonce")
-        nonce = nonce[0]
-        import hashlib
-        _hash = None
-        if not isinstance(self, AuthConnection):
-            _hash = getattr(self, "hash", None)
-        else:
-            m = hashlib.md5()
-            m.update("%s:%s" % (self.user, self.passwd))
-            _hash = m.hexdigest().upper()
-        m = hashlib.md5()
-        m.update("%s:%s" % (_hash, nonce))
-        auth2 = m.hexdigest().upper()
-        self._interact('auth2 %s\r\n' % auth2,
-                       ["AUTH_GRANTED"],
-                       ["AUTH_FAILED"])
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.settimeout(self._connection_timeout)
         SocketError.wrap(self._socket.connect, (self.host, self.port))
         self._socket_file = self._socket.makefile('rb')
-        ####
-        # ##t = self._socket.gettimeout()
-        self._socket.settimeout(1)
-        r = None
-        try:
-            r = self._read_response()
-        except SocketError:
-            pass
-        self._socket.settimeout(self._connection_timeout)
-        if r and r[0] == TAG_AUTH_REQ:
-            self.use_auth = True
-            self.authenticate()
+
+        if self._username and self._pw_hash:
+            self._authenticate(self._username, self._pw_hash)
+
+    def _authenticate(self, username, pw_hash):
+        self._username = username
+        self._pw_hash = pw_hash
+
+        nonce = self._interact(
+            'auth1 %s\r\n' % username,
+            ['NONCE'],
+            ["AUTH_USER_NOT_FOUND"])
+
+        nonce = nonce[0]
+        if not nonce:
+            raise AuthenticationError("Server did not return nonce")
+
+        auth2 = self._md5("%s:%s" % (pw_hash.upper(), nonce))
+        self._interact(
+            'auth2 %s\r\n' % auth2,
+            ['AUTH_GRANTED'],
+            ["AUTH_FAILED"])
+
+    def authenticate(self, cfg):
+        if not cfg:
+            return
+
+        if cfg.get('username') and cfg.get('password'):
+            pw_hash = self._md5("%s::%s" % (cfg['username'], cfg['password']))
+            self._authenticate(cfg['username'], pw_hash)
+
+        elif cfg.get('username') and cfg.get('pw_hash'):
+            self._authenticate(cfg['username'], cfg['pw_hash'])
+
+        elif cfg.get('auth_file'):
+            username, pw_hash = self._parse_auth_file(cfg['auth_file'])
+            self._authenticate(username, pw_hash)
+        else:
+            raise Exception("Got empty authentication config: %s", cfg)
+
+    @staticmethod
+    def _md5(data):
+        return hashlib.md5(data).hexdigest().upper()
+
+    @staticmethod
+    def _parse_auth_file(filename):
+        user = pw_hash = None
+        with open(filename) as fd:
+            for line in fd:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+
+                try:
+                    user, pw_hash = line.split("::")
+                except Exception:
+                    msg = "Cannot parse line(%s) in auth_file(%s)"
+                    raise Exception(msg % (line, filename))
+
+                pw_hash = pw_hash.upper()
+
+        if user is None or pw_hash is None:
+            msg = "No credentials in file(%s) found"
+            raise Exception(msg % filename)
+
+        return user, pw_hash
 
     def close(self):
-        try:
-            self._socket.sendall('quit\r\n')
-        except socket.error:
-            pass
         try:
             self._socket.close()
         except socket.error:
@@ -158,10 +151,8 @@ class Connection(object):
         status, results = self._read_response()
         if status in expected_ok:
             return results
-        elif status == TAG_NOT_AUTHORIZED:
-            raise AuthorizationException("Command %s not authorized")
-        elif status in TAG_AUTH_REQ:
-            raise AuthorizationException("Authentication required")
+        elif status == 'NOT_AUTHORIZED':
+            raise AuthorizationError("cmd(%r) not authorized" % command)
         elif status in expected_err:
             raise CommandFailed(command.split()[0], status, results)
         else:
@@ -176,7 +167,7 @@ class Connection(object):
 
     def _read_body(self, size):
         body = SocketError.wrap(self._socket_file.read, size)
-        SocketError.wrap(self._socket_file.read, 2)  # trailing crlf
+        SocketError.wrap(self._socket_file.read, 2) # trailing crlf
         if size > 0 and not body:
             raise SocketError()
         return body
@@ -197,16 +188,17 @@ class Connection(object):
     def _interact_peek(self, command):
         try:
             return self._interact_job(command, ['FOUND'], ['NOT_FOUND'], False)
-        except CommandFailed, (_, _status, _results):
+        except CommandFailed, (_, status, results):
             return None
 
     # -- public interface --
 
     def put(self, body, priority=DEFAULT_PRIORITY, delay=0, ttr=DEFAULT_TTR):
         assert isinstance(body, str)
-        jid = self._interact_value('put %d %d %d %d\r\n%s\r\n' %
-                                   (priority, delay, ttr, len(body), body),
-                                   ['INSERTED', 'BURIED'])
+        jid = self._interact_value(
+                'put %d %d %d %d\r\n%s\r\n' %
+                    (priority, delay, ttr, len(body), body),
+                ['INSERTED', 'BURIED'])
         return int(jid)
 
     def reserve(self, timeout=None):
@@ -267,11 +259,11 @@ class Connection(object):
 
     def stats_tube(self, name):
         return self._interact_yaml('stats-tube %s\r\n' % name,
-                                   ['OK'],
-                                   ['NOT_FOUND'])
+                                  ['OK'],
+                                  ['NOT_FOUND'])
 
     def pause_tube(self, name, delay):
-        self._interact('pause-tube %s %d\r\n' % (name, delay),
+        self._interact('pause-tube %s %d\r\n' %(name, delay),
                        ['PAUSED'],
                        ['NOT_FOUND'])
 
@@ -280,12 +272,12 @@ class Connection(object):
     def delete(self, jid):
         self._interact('delete %d\r\n' % jid, ['DELETED'], ['NOT_FOUND'])
 
-    def release(self, jid, priority=DEFAULT_PRIORITY, delay=0):
+    def release(self, jid, priority=None, delay=0):
         self._interact('release %d %d %d\r\n' % (jid, priority, delay),
                        ['RELEASED', 'BURIED'],
                        ['NOT_FOUND'])
 
-    def bury(self, jid, priority=DEFAULT_PRIORITY):
+    def bury(self, jid, priority=None):
         self._interact('bury %d %d\r\n' % (jid, priority),
                        ['BURIED'],
                        ['NOT_FOUND'])
@@ -306,12 +298,6 @@ class Job(object):
         self.body = body
         self.reserved = reserved
 
-    def _priority(self):
-        stats = self.stats()
-        if isinstance(stats, dict):
-            return stats['pri']
-        return DEFAULT_PRIORITY
-
     # -- public interface --
 
     def delete(self):
@@ -320,12 +306,12 @@ class Job(object):
 
     def release(self, priority=None, delay=0):
         if self.reserved:
-            self.conn.release(self.jid, priority or self._priority(), delay)
+            self.conn.release(self.jid, priority or self.stats()['pri'], delay)
             self.reserved = False
 
     def bury(self, priority=None):
         if self.reserved:
-            self.conn.bury(self.jid, priority or self._priority())
+            self.conn.bury(self.jid, priority or self.stats()['pri'])
             self.reserved = False
 
     def touch(self):
@@ -336,18 +322,7 @@ class Job(object):
         return self.conn.stats_job(self.jid)
 
 
-class AuthConnection(Connection):
-
-    def __init__(self, user, passwd, host=DEFAULT_HOST, port=DEFAULT_PORT, parse_yaml=True, connection_timeout=socket.getdefaulttimeout()):
-        self.user = user
-        self.passwd = passwd
-        Connection.__init__(self, host=host, port=port, parse_yaml=parse_yaml, connection_timeout=connection_timeout)
-
 if __name__ == '__main__':
-    pass
-    x = AuthConnection("mihai", "tesxt", "192.168.56.102")
-    x.close()
-    '''
     import doctest, os, signal
     try:
         pid = os.spawnlp(os.P_NOWAIT,
@@ -356,4 +331,3 @@ if __name__ == '__main__':
         doctest.testfile('TUTORIAL', optionflags=doctest.ELLIPSIS)
     finally:
         os.kill(pid, signal.SIGTERM)
-    '''
