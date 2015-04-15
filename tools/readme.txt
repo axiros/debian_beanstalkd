@@ -1,11 +1,16 @@
-beanstalkc.py :
-	is a modified version of the version distributed with ax* (0.2.1-ax) driver enabling connection to servers with auth ON
-	there is a new class AuthConnection, which extends the normal Connection, adding the possibility to add an username and password
-	also (to easen the usage of auth servers on actual envs) the connection class transparently reads the creds from a file in a specific path
-	
-	the client does an initial "read" on "connect" to search for the "AUTH_REQUIRED" tag, if found does the "hand-shake"
-bs_user.sh:
-	creates the hash to store in the credential repo, is the same for both sides (serve & client)
-	!!! it's a dummy script, does no args check !!!
-	Es.:
-		./bs_user.sh <user> <password> > <file>
+beanstalkc.py:
+ It is a modified version of beanstalkc supporting authentication.
+ It has a new method called 'authenticate(cfg)' where config could have one of
+ the following structures
+
+    1) {'username': 'xx', 'password': 'mmmm'}
+    2) {'username': 'xx', 'pw_hash': '3cec4db24e0b6b8313084b8c4213588b"} where pw_hash = md5sum(username::password)
+    3) {'auth_file: '/etc/beanstalkc.cred'}  where 'cat /etc/beanstalkc.cred' = xx::3cec4db24e0b6b8313084b8c4213588b
+
+This method must be explicitly called by the user of the Connection class.
+
+You can use bs_user to create the password file for client or server
+    ./bs_user.sh <user> <password> > <file>
+
+You can also use htdigest to create the password file.
+    htdigest -c filename '' username
