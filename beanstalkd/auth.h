@@ -27,8 +27,6 @@
 #define CMD_AUTH1_LEN CONSTSTRLEN(CMD_AUTH1)
 #define CMD_AUTH2_LEN CONSTSTRLEN(CMD_AUTH2)
 
-#define MSG_AUTH_ENABLED "AUTH_REQUIRED\r\n"
-
 /* exposed methods */
 void SET_AUTH();
 int IS_AUTH();

@@ -1782,7 +1782,6 @@ h_accept(const int fd, const short which, struct event *ev)
 
     dbgprintf("accepted conn, fd=%d\n", cfd);
     r = conn_set_evq(c, EV_READ | EV_PERSIST, (evh) h_conn);
-    if (IS_AUTH())  reply_msg(c, MSG_AUTH_ENABLED);
     if (r == -1) return twarnx("conn_set_evq() failed"), close(cfd), brake();
 }
 
