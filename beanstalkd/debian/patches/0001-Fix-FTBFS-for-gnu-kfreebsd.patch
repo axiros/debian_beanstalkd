@@ -1,0 +1,20 @@
+From: Serafeim Zanikolas <sez@debian.org>
+Date: Sun, 1 Apr 2012 15:48:45 +0200
+Subject: Fix FTBFS for gnu/kfreebsd
+
+Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=664613
+---
+ Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@
+ 	-g\
+ 
+ LDFLAGS=
+-OS=$(shell uname|tr A-Z a-z)
++OS=$(shell uname -s | tr A-Z a-z | sed 's?gnu/kfreebsd?freebsd?')
+ INSTALL=install
+ 
+ VERS=$(shell ./vers.sh)

@@ -1,0 +1,26 @@
+From: Gregory Potamianos <greg.potamianos@gmail.com>
+Date: Wed, 10 Apr 2013 19:37:08 +0300
+Subject: Sanitize Makefile
+
+Use debian CFLAGS and LDFLAGS instead of upstream's
+
+Last-Update: 2014-09-18
+---
+ Makefile |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -1,11 +1,10 @@
+ DESTDIR=
+ PREFIX=/usr/local
+ BINDIR=$(DESTDIR)$(PREFIX)/bin
+-CFLAGS=-Wall -Werror\
++CFLAGS?=-Wall -Werror\
+ 	-Wformat=2\
+ 	-g\
+ 
+-LDFLAGS=
+ OS=$(shell uname -s | tr A-Z a-z | sed 's?gnu/kfreebsd?freebsd?')
+ INSTALL=install
+ 

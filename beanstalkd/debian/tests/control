@@ -1,0 +1,3 @@
+Test-Command: py.test debian/tests
+Restrictions: needs-root, isolation-container
+Depends: beanstalkd, python-beanstalkc, python-pytest

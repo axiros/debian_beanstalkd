@@ -1,0 +1,38 @@
+Author: Apollon Oikonomopoulos <apoikos@debian.org>
+Description: Fix upstream test suite
+ Upstream's test suite has two issues:
+
+ a) it includes <sys/time.h> instead of <time.h>, which lacks the definition of
+    CLOCK_MONOTONIC.
+
+ b) it uses a non-constant as a static initializer.
+
+ We fix both these issues.
+
+Last-Update: 2014-09-18
+--- a/ct/ct.c
++++ b/ct/ct.c
+@@ -12,7 +12,7 @@
+ #include <fcntl.h>
+ #include <dirent.h>
+ #include <errno.h>
+-#include <sys/time.h>
++#include <time.h>
+ #include <stdint.h>
+ #include "internal.h"
+ #include "ct.h"
+@@ -23,9 +23,11 @@
+ static int64 bstart, bdur;
+ static int btiming; // bool
+ static int64 bbytes;
+-static const int64 Second = 1000 * 1000 * 1000;
+-static const int64 BenchTime = Second;
+-static const int MaxN = 1000 * 1000 * 1000;
++
++#define SECOND (1000 * 1000 * 1000)
++static const int64 Second = SECOND;
++static const int64 BenchTime = SECOND;
++static const int MaxN = SECOND;
+ 
+ 
+ 

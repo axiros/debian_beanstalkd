@@ -1,0 +1,10 @@
+[Unit]
+Description=Beanstalkd socket
+Documentation=man:beanstalkd(1)
+Before=sockets.target
+
+[Socket]
+ListenStream=127.0.0.1:11300
+
+[Install]
+WantedBy=sockets.target
