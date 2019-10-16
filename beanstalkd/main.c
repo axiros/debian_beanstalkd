@@ -66,6 +66,8 @@ main(int argc, char **argv)
 
     prot_init();
 
+    set_max_jobs_memory_usage();
+
     if (srv.user) su(srv.user);
     set_sig_handlers();
 

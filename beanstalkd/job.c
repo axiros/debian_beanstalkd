@@ -1,8 +1,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 #include "dat.h"
 
+static uint64 jobs_memory_usage = 0;
+static uint64 max_jobs_memory_usage = ULLONG_MAX;
 static uint64 next_id = 1;
 
 static int cur_prime = 0;
@@ -20,6 +24,27 @@ static int
 _get_job_hash_index(uint64 job_id)
 {
     return job_id % all_jobs_cap;
+}
+
+uint64
+get_jobs_memory_usage()
+{
+    return jobs_memory_usage;
+}
+
+void
+set_max_jobs_memory_usage()
+{
+    char *max_usage = getenv("JOBS_MAX_MEMORY");
+    if (max_usage == NULL) {
+        return;
+    }
+
+    errno = 0;
+    max_jobs_memory_usage = strtoull(max_usage, NULL, 10);
+    if (errno) {
+        max_jobs_memory_usage = ULLONG_MAX;
+    }
 }
 
 static void
@@ -86,7 +111,13 @@ job_find(uint64 job_id)
 job
 allocate_job(int body_size)
 {
+    size_t job_size;
     job j;
+
+    job_size = sizeof(struct job) + body_size;
+    if ((jobs_memory_usage + job_size) > max_jobs_memory_usage) {
+        return NULL;
+    }
 
     j = malloc(sizeof(struct job) + body_size);
     if (!j) return twarnx("OOM"), (job) 0;
@@ -95,6 +126,10 @@ allocate_job(int body_size)
     j->r.created_at = nanoseconds();
     j->r.body_size = body_size;
     j->next = j->prev = j; /* not in a linked list */
+    j->memory_used = job_size;
+
+    jobs_memory_usage += job_size;
+
     return j;
 }
 
@@ -142,6 +177,7 @@ job_free(job j)
 {
     if (j) {
         TUBE_ASSIGN(j->tube, NULL);
+        jobs_memory_usage -= j->memory_used;
         if (j->r.state != Copy) job_hash_free(j);
     }
 

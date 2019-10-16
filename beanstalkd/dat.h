@@ -149,6 +149,7 @@ struct job {
     void *reserver;
     int walresv;
     int walused;
+    uint32 memory_used;
 
     char body[]; // written separately to the wal
 };
@@ -384,3 +385,6 @@ struct Server {
 };
 void srvserve(Server *srv);
 void srvaccept(Server *s, int ev);
+
+uint64 get_jobs_memory_usage();
+void set_max_jobs_memory_usage();

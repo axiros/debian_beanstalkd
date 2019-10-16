@@ -187,6 +187,7 @@ size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
     "binlog-max-size: %d\n" \
     "id: %s\n" \
     "hostname: %s\n" \
+    "jobs_memory_usage: %" PRIu64 "\n" \
     "\r\n"
 
 #define STATS_TUBE_FMT "---\n" \
@@ -932,7 +933,8 @@ fmt_stats(char *buf, size_t size, void *x)
             srv->wal.nrec,
             srv->wal.filesize,
             id,
-            node_info.nodename);
+            node_info.nodename,
+            get_jobs_memory_usage());
 
 }
 
