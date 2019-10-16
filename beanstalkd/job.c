@@ -2,7 +2,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 
+static uint64 jobs_memory_usage = 0;
+static uint64 max_jobs_memory_usage = ULLONG_MAX;
 static uint64 next_id = 1;
 
 static int cur_prime = 0;
@@ -13,6 +17,27 @@ static size_t all_jobs_cap = 12289; /* == primes[0] */
 static size_t all_jobs_used = 0;
 
 static int hash_table_was_oom = 0;
+
+uint64
+get_jobs_memory_usage()
+{
+    return jobs_memory_usage;
+}
+
+void
+set_max_jobs_memory_usage()
+{
+    char *max_usage = getenv("JOBS_MAX_MEMORY");
+    if (max_usage == NULL) {
+        return;
+    }
+
+    errno = 0;
+    max_jobs_memory_usage = strtoull(max_usage, NULL, 10);
+    if (errno) {
+        max_jobs_memory_usage = ULLONG_MAX;
+    }
+}
 
 static void rehash(int);
 
@@ -93,7 +118,15 @@ job_find(uint64 job_id)
 Job *
 allocate_job(int body_size)
 {
+    size_t job_size;
+
     Job *j;
+
+    job_size = sizeof(struct Job) + body_size;
+    if ((jobs_memory_usage + job_size) > max_jobs_memory_usage) {
+        return NULL;
+    }
+
 
     j = malloc(sizeof(Job) + body_size);
     if (!j) {
@@ -105,7 +138,11 @@ allocate_job(int body_size)
     j->r.created_at = nanoseconds();
     j->r.body_size = body_size;
     j->body = (char *)j + sizeof(Job);
+    j->memory_used = job_size;
     job_list_reset(j);
+
+    jobs_memory_usage += job_size;
+
     return j;
 }
 
@@ -159,6 +196,7 @@ job_free(Job *j)
 {
     if (j) {
         TUBE_ASSIGN(j->tube, NULL);
+        jobs_memory_usage -= j->memory_used;
         if (j->r.state != Copy) job_hash_free(j);
     }
 

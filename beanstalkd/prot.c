@@ -188,6 +188,7 @@ size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
     "hostname: %s\n" \
     "os: %s\n" \
     "platform: %s\n" \
+    "jobs_memory_usage: %" PRIu64 "\n" \
     "\r\n"
 
 #define STATS_TUBE_FMT "---\n" \
@@ -995,7 +996,8 @@ fmt_stats(char *buf, size_t size, void *x)
                     instance_hex,
                     node_info.nodename,
                     node_info.version,
-                    node_info.machine);
+                    node_info.machine,
+                    get_jobs_memory_usage());
 }
 
 /* Read an integer from the given buffer and place it in num.
