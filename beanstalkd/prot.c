@@ -108,34 +108,6 @@ size_t job_data_size_limit = JOB_DATA_SIZE_LIMIT_DEFAULT;
 #define STATE_CLOSE         6  // conn should be closed
 #define STATE_WANT_ENDLINE  7  // skip until the end of a line
 
-#define OP_UNKNOWN 0
-#define OP_PUT 1
-#define OP_PEEKJOB 2
-#define OP_RESERVE 3
-#define OP_DELETE 4
-#define OP_RELEASE 5
-#define OP_BURY 6
-#define OP_KICK 7
-#define OP_STATS 8
-#define OP_STATSJOB 9
-#define OP_PEEK_BURIED 10
-#define OP_USE 11
-#define OP_WATCH 12
-#define OP_IGNORE 13
-#define OP_LIST_TUBES 14
-#define OP_LIST_TUBE_USED 15
-#define OP_LIST_TUBES_WATCHED 16
-#define OP_STATS_TUBE 17
-#define OP_PEEK_READY 18
-#define OP_PEEK_DELAYED 19
-#define OP_RESERVE_TIMEOUT 20
-#define OP_TOUCH 21
-#define OP_QUIT 22
-#define OP_PAUSE_TUBE 23
-#define OP_KICKJOB 24
-#define OP_RESERVE_JOB 25
-#define TOTAL_OPS 26
-
 #define STATS_FMT "---\n" \
     "current-jobs-urgent: %" PRIu64 "\n" \
     "current-jobs-ready: %" PRIu64 "\n" \
@@ -277,6 +249,8 @@ static const char * op_names[] = {
     CMD_PAUSE_TUBE,
     CMD_KICKJOB,
     CMD_RESERVE_JOB,
+    CMD_AUTH1,
+    CMD_AUTH2
 };
 
 static Job *remove_buried_job(Job *j);
@@ -805,6 +779,8 @@ which_cmd(Conn *c)
     TEST_CMD(c->cmd, CMD_LIST_TUBES, OP_LIST_TUBES);
     TEST_CMD(c->cmd, CMD_QUIT, OP_QUIT);
     TEST_CMD(c->cmd, CMD_PAUSE_TUBE, OP_PAUSE_TUBE);
+    TEST_CMD(c->cmd, CMD_AUTH1, OP_AUTH1);
+    TEST_CMD(c->cmd, CMD_AUTH2, OP_AUTH2);
     return OP_UNKNOWN;
 }
 
@@ -1312,6 +1288,11 @@ dispatch_cmd(Conn *c)
     type = which_cmd(c);
     if (verbose >= 2) {
         printf("<%d command %s\n", c->sock.fd, op_names[type]);
+    }
+
+    char* auth_response = authenticate(c, type);
+    if (auth_response != NULL) {
+        return reply(c, auth_response, strlen(auth_response), STATE_SEND_WORD);
     }
 
     switch (type) {

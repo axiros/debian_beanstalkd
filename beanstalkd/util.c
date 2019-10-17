@@ -113,6 +113,7 @@ usage(int code)
             " -u USER  become user and group\n"
             " -z BYTES set the maximum job size in bytes (default is %d);\n"
             "          max allowed is %d bytes\n"
+            " -A FILE  enable authentication. Users are read from given file.\n"
             " -s BYTES set the size of each write-ahead log file (default is %d);\n"
             "          will be rounded up to a multiple of 4096 bytes\n"
             " -v       show version information\n"
@@ -176,6 +177,9 @@ optparse(Server *s, char **argv)
                         warnx("maximum job size was set to %d", JOB_DATA_SIZE_LIMIT_MAX);
                         job_data_size_limit = JOB_DATA_SIZE_LIMIT_MAX;
                     }
+                    break;
+                case 'A':
+                    auth_read_users_files(EARGF(flagusage("-A")));
                     break;
                 case 's':
                     s->wal.filesize = parse_size_t(EARGF(flagusage("-s")));

@@ -69,6 +69,15 @@ typedef int(FAlloc)(int, int);
 #define UNUSED_PARAMETER(x) (void)(x)
 
 // version is defined in vers.c, see vers.sh for details.
+
+/* Authentication related constants and functions. */
+#define AUTH_NONCE_SIZE 16
+#define CMD_AUTH1 "auth1 "
+#define CMD_AUTH2 "auth2 "
+
+char* authenticate(Conn* c, int op_type);
+void auth_read_users_files(const char* path);
+
 extern const char version[];
 
 // verbose holds the count of -V parameters; it's a verbosity level.
@@ -407,6 +416,13 @@ struct Conn {
 
     Ms  watch;                  // the set of watched tubes by the connection
     Job reserved_jobs;          // linked list header
+
+    struct {
+        short authenticated;
+        char nonce[AUTH_NONCE_SIZE + 1];
+        const char* username;
+        const char* pw_hash;
+    } auth;
 };
 int  conn_less(void *ca, void *cb);
 void conn_setpos(void *c, size_t i);
@@ -499,3 +515,33 @@ void srvaccept(Server *s, int ev);
 
 uint64 get_jobs_memory_usage();
 void set_max_jobs_memory_usage();
+
+#define OP_UNKNOWN 0
+#define OP_PUT 1
+#define OP_PEEKJOB 2
+#define OP_RESERVE 3
+#define OP_DELETE 4
+#define OP_RELEASE 5
+#define OP_BURY 6
+#define OP_KICK 7
+#define OP_STATS 8
+#define OP_STATSJOB 9
+#define OP_PEEK_BURIED 10
+#define OP_USE 11
+#define OP_WATCH 12
+#define OP_IGNORE 13
+#define OP_LIST_TUBES 14
+#define OP_LIST_TUBE_USED 15
+#define OP_LIST_TUBES_WATCHED 16
+#define OP_STATS_TUBE 17
+#define OP_PEEK_READY 18
+#define OP_PEEK_DELAYED 19
+#define OP_RESERVE_TIMEOUT 20
+#define OP_TOUCH 21
+#define OP_QUIT 22
+#define OP_PAUSE_TUBE 23
+#define OP_KICKJOB 24
+#define OP_RESERVE_JOB 25
+#define OP_AUTH1 26
+#define OP_AUTH2 27
+#define TOTAL_OPS 28

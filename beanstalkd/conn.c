@@ -63,6 +63,10 @@ make_conn(int fd, char start_state, Tube *use, Tube *watch)
     cur_conn_ct++;
     tot_conn_ct++;
 
+    c->auth.authenticated = 0;
+    c->auth.username = NULL;
+    c->auth.pw_hash = NULL;
+
     return c;
 }
 

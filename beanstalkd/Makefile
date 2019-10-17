@@ -4,7 +4,7 @@ BINDIR=$(DESTDIR)$(PREFIX)/bin
 override CFLAGS?=-Wall -Werror -Wformat=2 -g
 override LDFLAGS?=
 
-LDLIBS?=
+LDLIBS := $(LDLIBS) -l apr-1 -l aprutil-1
 
 OS?=$(shell uname | tr 'A-Z' 'a-z' | sed 's?gnu/kfreebsd?freebsd?')
 INSTALL?=install
@@ -33,6 +33,7 @@ OFILES=\
 	util.o\
 	vers.o\
 	walg.o\
+	auth.o\
 
 TOFILES=\
 	testheap.o\
