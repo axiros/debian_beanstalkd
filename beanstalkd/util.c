@@ -113,6 +113,7 @@ usage(int code)
             " -p PORT  listen on port (default is " Portdef ")\n"
             " -u USER  become user and group\n"
             " -z BYTES set the maximum job size in bytes (default is %d)\n"
+            " -A FILE  enable authentication. Users are read from given file.\n"
             " -s BYTES set the size of each wal file (default is %d)\n"
             "            (will be rounded up to a multiple of 512 bytes)\n"
             " -c       compact the binlog (default)\n"
@@ -169,6 +170,9 @@ optparse(Server *s, char **argv)
                     break;
                 case 'z':
                     job_data_size_limit = parse_size_t(EARGF(flagusage("-z")));
+                    break;
+                case 'A':
+                    auth_read_users_files(EARGF(flagusage("-A")));
                     break;
                 case 's':
                     s->wal.filesize = parse_size_t(EARGF(flagusage("-s")));

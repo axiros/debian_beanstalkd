@@ -1,3 +1,21 @@
+beanstalkd (3.1.1) testing-proposed-updates; urgency=low
+
+  * Version bump for buster
+
+ -- Stephan H <sh@sh.sh>  Thu, 18 Sep 2014 15:44:39 +0000
+
+beanstalkd (3.1.0) testing-proposed-updates; urgency=low
+
+  * Add authentication to beanstalkd.
+
+ -- Stephan H <sh@sh.sh>  Thu, 18 Sep 2014 15:44:39 +0000
+
+beanstalkd (3.0.0) testing-proposed-updates; urgency=low
+
+  * Add a feature to limit memory usage via environment variable.
+
+ -- Stephan H <sh@sh.sh>  Thu, 18 Sep 2014 15:44:39 +0000
+
 beanstalkd (1.10-4) unstable; urgency=medium
 
   * Bump Standards to 3.9.8; no changes needed

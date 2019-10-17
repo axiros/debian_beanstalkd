@@ -1,4 +1,5 @@
 DESTDIR=
+LDLIBS := $(LDLIBS) -l apr-1 -l aprutil-1
 PREFIX=/usr/local
 BINDIR=$(DESTDIR)$(PREFIX)/bin
 CFLAGS?=-Wall -Werror\
@@ -28,6 +29,7 @@ OFILES=\
 	util.o\
 	vers.o\
 	walg.o\
+	auth.o\
 
 ifneq ($(DEB_HOST_ARCH_OS),linux)
 OFILES += sd-daemon.o

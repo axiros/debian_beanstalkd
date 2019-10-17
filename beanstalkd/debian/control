@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Gregory Potamianos <greg.potamianos@gmail.com>
 Uploaders: Apollon Oikonomopoulos <apoikos@debian.org>
-Build-Depends: debhelper (>= 9), libtool, net-tools, dh-systemd (>= 1.5), libsystemd-dev [linux-any]
+Build-Depends: debhelper (>= 9), libtool, net-tools, dh-systemd (>= 1.5), libsystemd-dev [linux-any], libapr1-dev, libaprutil1-dev
 Standards-Version: 3.9.8
 Homepage: https://kr.github.com/beanstalkd/
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/beanstalkd.git

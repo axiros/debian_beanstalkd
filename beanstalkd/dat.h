@@ -57,6 +57,14 @@ typedef int(FAlloc)(int, int);
 #define URGENT_THRESHOLD 1024
 #define JOB_DATA_SIZE_LIMIT_DEFAULT ((1 << 16) - 1)
 
+/* Authentication related constants and functions. */
+#define AUTH_NONCE_SIZE 16
+#define CMD_AUTH1 "auth1 "
+#define CMD_AUTH2 "auth2 "
+
+char* authenticate(Conn* c, int op_type);
+void auth_read_users_files(const char* path);
+
 extern const char version[];
 extern int verbose;
 extern struct Server srv;
@@ -298,6 +306,13 @@ struct Conn {
 
     struct ms  watch;
     struct job reserved_jobs; // linked list header
+
+    struct {
+        short authenticated;
+        char nonce[AUTH_NONCE_SIZE + 1];
+        const char* username;
+        const char* pw_hash;
+    } auth;
 };
 int  connless(Conn *a, Conn *b);
 void connrec(Conn *c, int i);
@@ -388,3 +403,32 @@ void srvaccept(Server *s, int ev);
 
 uint64 get_jobs_memory_usage();
 void set_max_jobs_memory_usage();
+
+#define OP_UNKNOWN 0
+#define OP_PUT 1
+#define OP_PEEKJOB 2
+#define OP_RESERVE 3
+#define OP_DELETE 4
+#define OP_RELEASE 5
+#define OP_BURY 6
+#define OP_KICK 7
+#define OP_STATS 8
+#define OP_JOBSTATS 9
+#define OP_PEEK_BURIED 10
+#define OP_USE 11
+#define OP_WATCH 12
+#define OP_IGNORE 13
+#define OP_LIST_TUBES 14
+#define OP_LIST_TUBE_USED 15
+#define OP_LIST_TUBES_WATCHED 16
+#define OP_STATS_TUBE 17
+#define OP_PEEK_READY 18
+#define OP_PEEK_DELAYED 19
+#define OP_RESERVE_TIMEOUT 20
+#define OP_TOUCH 21
+#define OP_QUIT 22
+#define OP_PAUSE_TUBE 23
+#define OP_JOBKICK 24
+#define OP_AUTH1 25
+#define OP_AUTH2 26
+#define TOTAL_OPS 27
