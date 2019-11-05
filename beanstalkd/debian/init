@@ -48,9 +48,7 @@ test -x $DAEMON || exit 0
 
 # Default options, these can be overriden by the information
 # at /etc/default/$NAME
-BEANSTALKD_LISTEN_ADDR="127.0.0.1"
-BEANSTALKD_LISTEN_PORT=11300
-BEANSTALKD_EXTRA=""
+DAEMON_OPTS=""          # Additional options given to the server
 
 #DIETIME=10              # Time to wait for the server to die, in seconds
                         # If this value is set too low you might not
@@ -74,8 +72,6 @@ DAEMONUSER=beanstalkd   # Users to run the daemons as. If this value
 if [ -f /etc/default/$NAME ] ; then
     . /etc/default/$NAME
 fi
-
-DAEMON_OPTS="-l $BEANSTALKD_LISTEN_ADDR -p $BEANSTALKD_LISTEN_PORT $BEANSTALKD_EXTRA"
 
 # Check that the user exists (if we set a user)
 # Does the user exist?
@@ -118,6 +114,11 @@ running() {
 
 start_server() {
 # Start the process using the wrapper
+        if [ "x$START" != "xyes" -a "x$START" != "xtrue"  ]; then
+            echo ""
+            echo "beanstalkd not configured to start, please edit /etc/default/beanstalkd to enable"
+            exit 0
+        fi
         if [ -z "$DAEMONUSER" ] ; then
             start_daemon -p $PIDFILE $DAEMON $DAEMON_OPTS
             errcode=$?
