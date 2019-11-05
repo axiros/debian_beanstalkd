@@ -1,4 +1,4 @@
-beanstalkd (3.1.0) testing-proposed-updates; urgency=low
+beanstalkd (3.1.0-deb8) testing-proposed-updates; urgency=low
 
   * Add authentication to beanstalkd.
 
