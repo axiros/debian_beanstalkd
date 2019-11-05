@@ -1,4 +1,4 @@
-beanstalkd (3.1.1) testing-proposed-updates; urgency=low
+beanstalkd (3.1.0-deb10) testing-proposed-updates; urgency=low
 
   * Version bump for buster
 
