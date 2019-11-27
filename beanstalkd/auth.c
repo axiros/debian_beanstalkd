@@ -22,7 +22,7 @@
 #define MSG_AUTH_GRANTED "AUTH_GRANTED\r\n"
 #define MSG_AUTH_FAILED "AUTH_FAILED\r\n"
 
-static const char MATCH_USER[] = "^[[:space:]]*([^:]*):([[:alnum:]]*)[[:space:]]*$";
+static const char MATCH_USER[] = "^[[:space:]]*([^:]*)::([[:alnum:]]*)[[:space:]]*$";
 
 typedef struct {
     char* username;
