@@ -1,0 +1,22 @@
+From: Serafeim Zanikolas <sez@debian.org>
+Date: Sun, 1 Apr 2012 15:48:45 +0200
+Subject: Fix FTBFS for gnu/kfreebsd
+
+Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=664613
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index dc0afb9..e843ad0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ override LDFLAGS?=
+ 
+ LDLIBS?=
+ 
+-OS?=$(shell uname | tr 'A-Z' 'a-z')
++OS?=$(shell uname | tr 'A-Z' 'a-z' | sed 's?gnu/kfreebsd?freebsd?')
+ INSTALL?=install
+ PKG_CONFIG?=pkg-config
+ 

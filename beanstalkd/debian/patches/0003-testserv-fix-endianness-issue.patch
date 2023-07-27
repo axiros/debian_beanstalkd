@@ -1,0 +1,45 @@
+From: Apollon Oikonomopoulos <apoikos@debian.org>
+Date: Wed, 23 Sep 2020 23:33:46 +0300
+Subject: testserv: fix endianness issue
+
+Building beanstalkd on big-endian systems (such as s390x, ppc64 and
+spart64) currently fails on the test phase, indicating an error in
+mustforksrv(). Digging a bit deeper, it turns out this is a type-casting
+issue between size_t (unsigned long int) and socklen_t (unsigned int):
+on these systems, size_t is 8 bytes, while socklen_t is only 4. These
+being big-endian systems, actually casting a (size_t *) pointer as
+(socklen_t *) will set the 4 most significant bytes, rather the
+least-significant ones, leading to unexpected results.
+
+To better illustrate this, on s390x this code:
+
+ size_t sz = 0;
+ *(socklen_t *)&sz = 4;
+ printf("*(socklen_t *)&sz = %d, sz = %ld\n", *(socklen_t *)&sz, sz);
+
+produces the following output:
+
+ *(socklen_t *)&sz = 4, sz = 17179869184
+
+where 17179869184 = 4 << 32
+
+Fix this by avoiding the cast from size_to to sockaddr_t altogether.
+---
+ testserv.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/testserv.c b/testserv.c
+index 449345f..911951d 100644
+--- a/testserv.c
++++ b/testserv.c
+@@ -191,8 +191,8 @@ mustforksrv(void)
+         exit(1);
+     }
+ 
+-    size_t len = sizeof(addr);
+-    int r = getsockname(srv.sock.fd, (struct sockaddr *)&addr, (socklen_t *)&len);
++    socklen_t len = sizeof(addr);
++    int r = getsockname(srv.sock.fd, (struct sockaddr *)&addr, &len);
+     if (r == -1 || len > sizeof(addr)) {
+         puts("mustforksrv failed");
+         exit(1);

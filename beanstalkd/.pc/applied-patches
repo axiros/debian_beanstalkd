@@ -1,0 +1,3 @@
+0001-Fix-FTBFS-for-gnu-kfreebsd.patch
+0002-Sanitize-Makefile.patch
+0003-testserv-fix-endianness-issue.patch

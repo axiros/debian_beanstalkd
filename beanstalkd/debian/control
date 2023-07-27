@@ -1,0 +1,33 @@
+Source: beanstalkd
+Section: net
+Priority: optional
+Maintainer: Gregory Potamianos <greg.potamianos@gmail.com>
+Uploaders: Apollon Oikonomopoulos <apoikos@debian.org>
+Build-Depends: debhelper-compat (= 13),
+ libtool,
+ net-tools,
+ pkg-config,
+ libsystemd-dev [linux-any]
+Standards-Version: 4.5.0
+Homepage: https://github.com/beanstalkd/beanstalkd
+Vcs-Git: https://salsa.debian.org/debian/beanstalkd.git
+Vcs-Browser: https://salsa.debian.org/debian/beanstalkd
+
+Package: beanstalkd
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, netbase, lsb-base (>= 3.0-6)
+Pre-Depends: ${misc:Pre-Depends}
+Suggests: doc-base
+Description: simple, in-memory, workqueue service
+ Beanstalkd is a simple, fast, workqueue service (a specific case of message
+ queueing), in which messages are organised in "tubes". Beanstalk clients can
+ insert and consume messages into and from such tubes.
+ .
+ The beanstalk interface is generic, but was originally designed for reducing
+ the latency of page views in high-volume web applications by running
+ time-consuming tasks asynchronously.
+ .
+ Beanstalkd is meant to be ran in a trusted network, as it has no
+ authorisation/authentication mechanisms.
+ .
+ This package has the server files.

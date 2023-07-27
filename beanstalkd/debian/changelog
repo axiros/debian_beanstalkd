@@ -1,0 +1,262 @@
+beanstalkd (1.12-2) unstable; urgency=medium
+
+  * Fix FTBFS on 64-bit big-endian systems
+  * d/copyright: remove references to sd-daemon.*; removed upstream
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Thu, 24 Sep 2020 00:00:18 +0300
+
+beanstalkd (1.12-1) unstable; urgency=medium
+
+  * New upstream version 1.12
+    + Drop 0003-Use-external-sd-daemon-on-linux.patch; upstream now detects
+      libsystemd via pkg-config
+      • B-D on pkg-config
+    + Refresh remaining patches
+  * Bump dh compat to 13; no changes needed
+  * Bump Standards-Version to 4.5.0; no changes needed
+  * d/copyright: bump debian/ years
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Wed, 23 Sep 2020 12:08:33 +0300
+
+beanstalkd (1.11-2) unstable; urgency=medium
+
+  * Dont run unittests for python2 binary, to reduce pytest rdeps
+
+ -- Sandro Tosi <morph@debian.org>  Mon, 13 Apr 2020 21:45:55 -0400
+
+beanstalkd (1.11-1) unstable; urgency=medium
+
+  * New upstream version 1.11
+  * Bump dh compat to 12:
+    + Drop B-D on dh-systemd
+    + Do not pass --with systemd to the dh sequencer
+    + Override dh_installsystemd instead of dh_systemd_enable
+  * Bump Standards-Version to 4.4.0; no changes needed
+  * Update Homepage link
+  * Point Vcs-* to salsa.d.o
+  * d/rules: get DEB_HOST_ARCH_OS from architecture.mk
+  * d/copyright: adjust years
+  * Drop obsolete patches:
+    + 0004-fix-test-suite.patch: fixed upstream
+    + 0005-fix-log-compaction-with-a-log-over-2GB.patch: included upstream
+  * Refresh patches
+  * Do not override LDLIBS from d/rules, patch Makefile instead
+  * d/docs: update README path
+  * Drop restrictions from debian/tests/control
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Wed, 17 Jul 2019 11:00:23 -0300
+
+beanstalkd (1.10-4) unstable; urgency=medium
+
+  * Bump Standards to 3.9.8; no changes needed
+  * Enable all hardening flags
+  * Depend on lsb-base for /lib/lsb/init-functions
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Sat, 17 Dec 2016 01:17:16 +0200
+
+beanstalkd (1.10-3) unstable; urgency=medium
+
+  * Fix Vcs-Git URL.
+  * Add a patch to fix log compaction for logs > 2GB (upstream commit
+    93ab9345).
+  * Add DEP-8 tests.
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Wed, 27 Jan 2016 12:20:22 +0200
+
+beanstalkd (1.10-2) unstable; urgency=medium
+
+  * d/control: set priority to optional
+  * d/control: use HTTPS in Vcs-* and Homepage fields
+  * Bump standards to 3.9.6; no changes needed
+  * d/rules: use LDLIBS for libsystemd - change obtained from Ubuntu
+    (closes: #779831)
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Tue, 26 Jan 2016 16:36:30 +0200
+
+beanstalkd (1.10-1) unstable; urgency=medium
+
+  [ Apollon Oikonomopoulos ]
+  * New upstream release
+    + Drop 0004-fix-segfault-on-interrupted-epoll_wait.patch, fixed upstream.
+    + Refresh 0002-Sanitize-Makefile.patch and
+      0003-Use-external-sd-daemon-on-linux.patch to match upstream changes.
+  * 0003-Use-external-sd-daemon-on-linux.patch: include
+    systemd/systemd-daemon.h before dat.h; fixes FTBFS with newer systemd
+    header versions.
+  * Add a patch to fix a couple of bugs in upstream's test suite.
+  * B-D on systemd-dev instead of systemd-daemon-dev and link with -lsystemd.
+  * d/watch: use sane filenames for upstream tarballs.
+  * Remove Serafeim Zanikolas from Uploaders. Thanks for your hard work!
+
+  [ Gregory Potamianos ]
+  * Fix typo in beanstalkd.service file, causing it to ignore BEANSTALKD_EXTRA
+    from /etc/default/beanstalkd.
+
+ -- Apollon Oikonomopoulos <apoikos@debian.org>  Thu, 18 Sep 2014 09:03:49 +0300
+
+beanstalkd (1.9-2) unstable; urgency=medium
+
+  [ Gregory Potamianos ]
+  * Use debian libsystemd-daemon where available
+
+  [ Apollon Oikonomopoulos ]
+  * Add patch fixing segfault on interrupted epoll_wait. Thanks to Danny
+    Guinther for the patch! (LP: #1263808)
+  * Add Documentation field to the systemd unit file
+  * Add systemd socket activation support
+  * Restart beanstalkd after upgrade (and not during). This ensures that
+    socket activation under systemd will work predictably during upgrades and
+    also minimizes service downtime.
+
+ -- Gregory Potamianos <greg.potamianos@gmail.com>  Thu, 09 Jan 2014 20:20:18 +0200
+
+beanstalkd (1.9-1) unstable; urgency=low
+
+  [ Gregory Potamianos ]
+  * Imported Upstream version 1.9
+  * debian/watch: beanstalkd now uses github archive
+  * debian/patches: drop 0003-Fix-FTBFS-in-hurd-i386.patch, merged upstream
+  * debian/patches: refresh 0001-Fix-FTBFS-for-gnu-kfreebsd.patch
+  * debian/patches: refresh 0002-Sanitize-Makefile.patch
+  * debian/docs: removed NEWS.md, removed upstream
+  * debian/default: remove obsolete variables
+  * debian/control: Bump Standards-Version to 3.9.5 (no changes)
+
+  [ Apollon Oikonomopoulos ]
+  * Init script/defaults refactoring
+  * Initial systemd support
+
+ -- Gregory Potamianos <greg.potamianos@gmail.com>  Tue, 12 Nov 2013 15:26:11 +0200
+
+beanstalkd (1.8-2) unstable; urgency=low
+
+  * Add debian/patches/fix-hurd-ftbfs.patch to fix FTBFS in hurd
+  * debian/control: Update homepage link
+  * debian/control: Canonicalize Vcs-* fields
+  * debian/patches/*: Make patches gbp-pq friendly
+
+ -- Gregory Potamianos <greg.potamianos@gmail.com>  Sat, 13 Apr 2013 19:07:18 +0300
+
+beanstalkd (1.8-1) unstable; urgency=low
+
+  * New upstream (Closes: #701429, #704288)
+  * Refresh debian/patches/freebsd-build.diff to apply on Makefile
+  * Add debian/patch/sanitize_makefile.diff to play nice with
+    debian hardened flags
+  * Bump debhelper compat to 9
+  * Bump Standards version to 3.9.4
+  * Update debian/copyright to comply with copyright v1.0
+  * Friendly takeover (encouraged by old maintainer); setting
+    Gregory Potamianos as Maintainer and Apollon Oikonomopoulos,
+    Serafeim Zanikolas as Uploaders
+
+ -- Gregory Potamianos <greg.potamianos@gmail.com>  Mon, 08 Apr 2013 13:23:01 +0300
+
+beanstalkd (1.7-1) unstable; urgency=high
+
+  * New upstream (Closes: #666775, #687402); high urgency due to RC bugs
+  * Add Vcs-* headers in debian/control
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sat, 15 Sep 2012 12:18:05 +0200
+
+beanstalkd (1.6-1) unstable; urgency=low
+
+  * New upstream
+    - drop build dependencies (python-minimal, procps, fiu-utils) due to
+      re-organisation of tests
+    - debian/rules: do not disable any tests
+    - drop debian/patches/randomise-port.diff
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 20 May 2012 18:57:56 +0200
+
+beanstalkd (1.5-2) unstable; urgency=high
+
+  * Add debian/patches/freebsd-build.diff to fix FTBFS for gnu/kfreebsd
+    (Closes: #664613); high urgency due to RC bug
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 01 Apr 2012 15:33:27 +0200
+
+beanstalkd (1.5-1) unstable; urgency=low
+
+  * New upstream
+    - Drop Build-Depends on libevent-dev and autotools-dev
+    - Update debian/copyright to reflect new upstream license
+    - Drop debian/patches/rename-dprintf.diff (no longer necessary)
+    - Update debian/docs for some docs that are no longer shipped
+    - debian/rules: override default installation location, and skip tests
+      sh-tests/binlog-v5.sh (requires beanstalkd 1.4.6) and pause-tube (race
+      condition that may result in false positive)
+  * Point debian/watch to github instead
+  * Bump up Standards-Version to 3.9.3 (no changes)
+
+ -- Serafeim Zanikolas <sez@debian.org>  Fri, 02 Mar 2012 00:32:53 +0100
+
+beanstalkd (1.4.6-3) unstable; urgency=high
+
+  * Patch sh-tests/common.functions to randomise the listener port during
+    build tests (Closes: #636964); high urgency due to RC bug
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 14 Aug 2011 15:46:45 +0200
+
+beanstalkd (1.4.6-2) unstable; urgency=low
+
+  * Apply upstream patch, rename-dprintf.diff, to fix FTBFS (Closes: #632762)
+  * Bump up Standards-Version to 3.9.2 (no changes)
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 10 Jul 2011 20:51:11 +0200
+
+beanstalkd (1.4.6-1) unstable; urgency=medium
+
+  * New upstream release
+  * Fix bashism in the upstream, dynamically generated Makefile
+  * Urgency set to medium because the new upstream release fixes a potential
+    security issue (see upstream NEWS file)
+  * debian/control:Maintainer: set to my debian email address
+
+ -- Serafeim Zanikolas <sez@debian.org>  Sun, 30 May 2010 01:00:51 +0200
+
+beanstalkd (1.4.4-2) unstable; urgency=low
+
+  * debian/control:Build-Depends: require fiu-utils >=0.13-3, to test
+    successfully on certain arches (see #574405 and #574752)
+  * debian/postrm: fix test of whether /var/lib/beanstalkd is empty (would
+    fail with subdirectories, which normally are not created there), and
+    revise diagnostic messages
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Thu, 25 Mar 2010 21:58:07 +0100
+
+beanstalkd (1.4.4-1) unstable; urgency=low
+
+  * New Upstream Release
+    - drop make-tests-more-robust-and-tidy.diff (adopted upstream)
+    - fixes failing build tests (Closes: #571357)
+  * Modify /etc/default/beanstalkd for easier source'ing
+  * debian/control:Build-Depends: replace netcat with python-minimal
+  * debian/rules: run all build tests, and do so with verbosity
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Mon, 15 Mar 2010 09:31:44 +0100
+
+beanstalkd (1.4.3-2) unstable; urgency=low
+
+  * Bump up Standards-Version to 3.8.4 (no changes)
+  * Enable build-time tests
+    - add make-tests-more-robust-and-tidy.diff
+        - do not run tests unless loopback interface is configured
+        - listen only on localhost, for security reasons
+        - try listening on another port when the default is not available
+        - cleanup named pipes that are left behind by fiu
+    - debian/control: add Build-Depends: netcat, fiu-utils, procps, net-tools
+    - debian/rules: ignore sh-tests/pause-tube.* (false negative)
+  * debian/init: add Required-{Start,Stop}: $remote_fs for dep-based booting
+  * debian/control
+    - add Suggests: doc-base
+    - revise package description to clarify that beanstalkd is a workqueue
+      service, which is a specific case of messaging
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Sun, 21 Feb 2010 16:34:00 +0100
+
+beanstalkd (1.4.3-1) unstable; urgency=low
+
+  * Initial release (Closes: #557128)
+
+ -- Serafeim Zanikolas <serzan@hellug.gr>  Wed, 18 Nov 2009 23:32:00 +0100

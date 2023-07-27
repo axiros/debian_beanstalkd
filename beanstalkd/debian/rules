@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/dpkg/architecture.mk
+
+# for beanstalkd test scripts
+export VERBOSE=1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+override_dh_prep:
+	dh_prep -X beanstalkd.spec
+
+override_dh_auto_install:
+	dh_install
+	dh_installman
+
+# silly acrobatics to preserve an upstream file
+override_dh_auto_clean:
+	dh_testdir
+	mv beanstalkd.spec beanstalkd.spec_
+	dh_auto_clean
+	mv beanstalkd.spec_ beanstalkd.spec
+
+override_dh_installsystemd:
+	# Enable the service
+	dh_installsystemd --restart-after-upgrade beanstalkd.service
+
+	# Do not enable the socket on install, but disable it on purge
+	dh_installsystemd --no-enable beanstalkd.socket
+
+override_dh_installinit:
+	# This makes sure systemd's socket activation will not start the
+	# service during the upgrade and also minimizes service downtime.
+	dh_installinit --restart-after-upgrade
+
+.PHONY: override_dh_prep override_dh_auto_install override_dh_auto_clean \
+	override_dh_installsystemd override_dh_installinit

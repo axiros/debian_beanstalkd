@@ -1,0 +1,21 @@
+beanstalkd (1.9-2) unstable; urgency=medium
+
+  As of 1.9-2, beanstalkd ships a systemd socket unit file to facilitate
+  socket activation via systemd. The socket activation is disabled by default,
+  if you want to use it you need to stop the service and manually enable and
+  start the systemd socket:
+
+      $ systemctl stop beanstalkd.service
+      $ systemctl enable beanstalkd.socket
+      $ systemctl start beanstalkd.socket
+
+  These steps need to be performed only once and will bind 127.0.0.1:11300
+  and pass it down to beanstalkd. Note that if you enable socket activation,
+  the port and address specified in /etc/default/beanstalkd will not be used.
+
+  As with all systemd unit files, you can override beanstalkd.socket by
+  copying it to /etc/systemd/system/ and modifying it.
+
+  For more information about socket activation, see systemd.socket(5).
+
+ -- Apollon Oikonomopoulos <apoikos@gmail.com>  Tue, 07 Jan 2014 12:33:36 +0200
