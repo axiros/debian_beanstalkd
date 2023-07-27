@@ -1,3 +1,9 @@
+beanstalkd (3.2.0-deb11) testing-proposed-updates; urgency=low
+
+  * Version bump for bullseye
+
+ -- Stephan H <sh@sh.sh>  Thu, 18 Sep 2014 15:44:39 +0000
+
 beanstalkd (3.1.1) testing-proposed-updates; urgency=low
 
   * Version bump for buster
